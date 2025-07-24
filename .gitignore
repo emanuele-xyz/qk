@@ -361,3 +361,9 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# custom output binary folder
+.bin
+
+# custom temporary output folder
+.tmp
