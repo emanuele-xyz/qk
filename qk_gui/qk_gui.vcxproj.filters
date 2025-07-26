@@ -30,6 +30,9 @@
     <ClCompile Include="src\D11.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\ImGuiHandle.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\qk_gui\PCH.h">
@@ -42,6 +45,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\qk_gui\D11.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\qk_gui\ImGuiHandle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
