@@ -3,6 +3,7 @@
 #include <qk_gui/QkGUI.h>
 
 #include <string>
+#include <utility>
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -38,6 +39,8 @@ namespace qk_gui::w32
         WindowHandle& operator=(WindowHandle&&) noexcept = delete;
     public:
         HWND Handle() const noexcept { return m_handle; }
+    public:
+        std::pair<int, int> Dimensions() const;
     private:
         HWND m_handle;
     };

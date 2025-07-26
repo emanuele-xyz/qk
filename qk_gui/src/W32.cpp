@@ -52,6 +52,12 @@ namespace qk_gui::w32
     {
         DestroyWindow(m_handle);
     }
+    std::pair<int, int> WindowHandle::Dimensions() const
+    {
+        RECT rect{};
+        qk_gui_Check(GetClientRect(m_handle, &rect));
+        return std::make_pair(rect.right, rect.bottom);
+    }
 
     void PumpMessages()
     {

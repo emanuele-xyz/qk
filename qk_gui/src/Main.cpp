@@ -7,6 +7,7 @@ namespace qk_gui
 {
     constexpr const char* WINDOW_CLASS_NAME{ "qk_gui" };
     constexpr const char* WINDOW_TITLE{ "Quick GUI" };
+    constexpr int MIN_WINDOW_DIMENSION{ 8 };
 
     struct AppContext
     {
@@ -73,6 +74,12 @@ namespace qk_gui
         {
             w32::PumpMessages();
 
+            auto [window_w, window_h] { window.Dimensions() };
+
+            // sanitize window dimensions so that they cannot be zero
+            window_w = std::max(MIN_WINDOW_DIMENSION, window_w);
+            window_h = std::max(MIN_WINDOW_DIMENSION, window_h);
+
             if (app_context.did_resize)
             {
                 // clear d11 context state (some resources may be implicitly referenced by the context)
@@ -81,8 +88,8 @@ namespace qk_gui
                 // destroy frame buffer
                 frame_buffer = {};
 
-                // resize swap chain (TODO: use sanitized window w and h)
-                qk_gui_CheckHR(swap_chain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, 0));
+                // resize swap chain
+                qk_gui_CheckHR(swap_chain->ResizeBuffers(0, window_w, window_h, DXGI_FORMAT_UNKNOWN, 0));
 
                 // create new frame buffer
                 frame_buffer = { d3d_dev.Get(), swap_chain.Get() };
