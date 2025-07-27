@@ -367,3 +367,6 @@ FodyWeavers.xsd
 
 # custom temporary output folder
 .tmp
+
+# imgui.ini
+imgui.ini
