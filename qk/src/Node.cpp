@@ -10,4 +10,11 @@ namespace qk
         node.background.color = color;
         return node;
     }
+    Node Node::MakeModel(MeshID mesh_id)
+    {
+        Node node{};
+        node.type = NodeType::Model;
+        node.model.mesh_id = mesh_id;
+        return node;
+    }
 }

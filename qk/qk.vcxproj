@@ -95,6 +95,7 @@
     <ClInclude Include="private\qk\D11.h" />
     <ClInclude Include="private\qk\PCH.h" />
     <ClInclude Include="public\qk\Crash.h" />
+    <ClInclude Include="public\qk\Mesh.h" />
     <ClInclude Include="public\qk\Node.h" />
     <ClInclude Include="public\qk\Qk.h" />
     <ClInclude Include="public\qk\Renderer.h" />

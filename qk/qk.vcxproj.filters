@@ -39,6 +39,9 @@
     <ClInclude Include="public\qk\Vectors.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="public\qk\Mesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Renderer.cpp">

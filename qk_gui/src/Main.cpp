@@ -92,6 +92,7 @@ namespace qk_gui
         // add node to nodes list // TODO: to be removed
         {
             nodes.emplace_back(qk::Node::MakeBackground(qk::v4{ 1.0f, 0.0f, 1.0f, 1.0f }));
+            nodes.emplace_back(qk::Node::MakeModel(qk::CUBE_MESH_ID));
         }
 
         while (app_context.is_running)
