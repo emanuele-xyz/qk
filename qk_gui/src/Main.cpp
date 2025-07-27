@@ -4,6 +4,8 @@
 #include <qk_gui/D11.h>
 #include <qk_gui/ImGuiHandle.h>
 
+#include <qk/Qk.h>
+
 #include <imgui.h>
 #include <imgui_impl_win32.h>
 
@@ -84,6 +86,13 @@ namespace qk_gui
         wrl::ComPtr<IDXGISwapChain1> swap_chain{ d11::CreateSwapChain(window.Handle(), d3d_dev.Get()) };
         d11::FrameBuffer frame_buffer{ d3d_dev.Get(), swap_chain.Get() };
         ImGuiHandle imgui_handle{ window.Handle(), d3d_dev.Get(), d3d_ctx.Get() };
+        qk::Renderer renderer{ d3d_dev.Get(), d3d_ctx.Get() };
+        std::vector<qk::Node> nodes{};
+
+        // add node to nodes list // TODO: to be removed
+        {
+            nodes.emplace_back(qk::Node::MakeBackground(qk::v4{ 1.0f, 0.0f, 1.0f, 1.0f }));
+        }
 
         while (app_context.is_running)
         {
@@ -113,11 +122,8 @@ namespace qk_gui
                 app_context.did_resize = false;
             }
 
-            // clear back buffer rtv (TODO: to be removed)
-            {
-                float clear_color[4]{ 0.2f, 0.3f, 0.3f, 1.0f };
-                d3d_ctx->ClearRenderTargetView(frame_buffer.BackBufferRTV(), clear_color);
-            }
+            // render scene to the back buffer
+            renderer.Render(frame_buffer.BackBufferRTV(), nodes);
 
             // render imgui
             imgui_handle.BeginFrame();
