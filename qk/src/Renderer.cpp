@@ -3,6 +3,10 @@
 #include <qk/Mesh.h>
 #include <qk/D11.h>
 
+#include <SimpleMath.h>
+using Matrix = DirectX::SimpleMath::Matrix;
+namespace dx = DirectX; // for DirectX namespace included by DirectXMath (included by SimpleMath)
+
 namespace qk
 {
     class Mesh
@@ -163,7 +167,7 @@ namespace qk
         RendererImpl& operator=(const RendererImpl&) = delete;
         RendererImpl& operator=(RendererImpl&&) noexcept = delete;
     public:
-        void Render(ID3D11RenderTargetView* rtv, std::span<const Node> nodes);
+        void Render(int w, int h, ID3D11RenderTargetView* rtv, std::span<const Node> nodes);
     private:
         ID3D11Device* m_dev;
         ID3D11DeviceContext* m_ctx;
@@ -189,7 +193,7 @@ namespace qk
             }
         }
     }
-    void RendererImpl::Render(ID3D11RenderTargetView* rtv, std::span<const Node> nodes)
+    void RendererImpl::Render(int w, int h, ID3D11RenderTargetView* rtv, std::span<const Node> nodes)
     {
         // clear rtv
         {
@@ -204,14 +208,78 @@ namespace qk
             }
             m_ctx->ClearRenderTargetView(rtv, clear_color.elems);
         }
+
+        // initialize viewport
+        D3D11_VIEWPORT viewport{};
+        viewport.TopLeftX = 0.0f;
+        viewport.TopLeftY = 0.0f;
+        viewport.Width = static_cast<float>(w);
+        viewport.Height = static_cast<float>(h);
+        viewport.MinDepth = 0.0f;
+        viewport.MaxDepth = 1.0f;
+
+        // prepare pipeline for drawing
+        {
+            ID3D11Buffer* cbufs[]{ m_cb_scene.Get(), m_cb_object.Get() };
+
+            m_ctx->ClearState();
+            m_ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+            m_ctx->IASetInputLayout(m_il.Get());
+            m_ctx->VSSetShader(m_vs.Get(), nullptr, 0);
+            m_ctx->VSSetConstantBuffers(0, std::size(cbufs), cbufs);
+            m_ctx->PSSetShader(m_ps.Get(), nullptr, 0);
+            m_ctx->PSSetConstantBuffers(0, std::size(cbufs), cbufs);
+            m_ctx->RSSetState(m_rs.Get());
+            m_ctx->RSSetViewports(1, &viewport);
+            m_ctx->OMSetRenderTargets(1, &rtv, nullptr);
+        }
+
+        // build the view and projection matrices from the last camera node and then upload them to the GPU
+        {
+            auto it{ std::find_if(nodes.rbegin(), nodes.rend(), [](const Node& n) { return n.type == NodeType::Camera; }) };
+            qk_Check(it != nodes.rend());
+
+            float aspect{ viewport.Width / viewport.Height };
+            float fov_rad{ DirectX::XMConvertToRadians(camera.fov_deg) };
+
+            d11::SubresourceMap map{ m_ctx, m_cb_scene.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
+            auto constants{ static_cast<SceneConstants*>(map.Data()) };
+            constants->view = Matrix::CreateLookAt(camera.eye, camera.target, { 0.0f, 1.0f, 0.0f });
+            constants->projection = Matrix::CreatePerspectiveFieldOfView(fov_rad, aspect, camera.near_plane, camera.far_plane);
+        }
+
+        // loop over each model node and render it
+        for (const Node& node : nodes)
+        {
+            if (node.type == NodeType::Model)
+            {
+                // upload object constants
+                {
+                    d11::SubresourceMap map{ m_ctx.Get(), m_cb_object.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
+                    auto constants{ static_cast<ObjectConstants*>(map.Data()) };
+                    constants->model = obj.model;
+                    constants->normal = obj.normal;
+                }
+
+                // set pipeline state
+                {
+                    // set pipeline state
+                    m_ctx->IASetIndexBuffer(obj.mesh->Indices(), obj.mesh->IndexFormat(), 0);
+                    m_ctx->IASetVertexBuffers(0, 1, obj.mesh->Vertices(), obj.mesh->Stride(), obj.mesh->Offset());
+                }
+
+                // draw
+                m_ctx->DrawIndexed(obj.mesh->IndexCount(), 0, 0);
+            }
+        }
     }
 
     Renderer::Renderer(void* d3d_dev, void* d3d_ctx)
         : m_impl{ std::make_shared<RendererImpl>(static_cast<ID3D11Device*>(d3d_dev), static_cast<ID3D11DeviceContext*>(d3d_ctx)) }
     {
     }
-    void Renderer::Render(void* rtv, std::span<const Node> nodes)
+    void Renderer::Render(int w, int h, void* rtv, std::span<const Node> nodes)
     {
-        std::static_pointer_cast<RendererImpl>(m_impl)->Render(static_cast<ID3D11RenderTargetView*>(rtv), nodes);
+        std::static_pointer_cast<RendererImpl>(m_impl)->Render(w, h, static_cast<ID3D11RenderTargetView*>(rtv), nodes);
     }
 }

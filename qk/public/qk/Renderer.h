@@ -17,7 +17,7 @@ namespace qk
 		Renderer& operator=(const Renderer&) = delete;
 		Renderer& operator=(Renderer&&) noexcept = delete;
 	public:
-		void Render(void* rtv, std::span<const Node> nodes);
+		void Render(int w, int h, void* rtv, std::span<const Node> nodes);
 	private:
 		std::shared_ptr<void> m_impl;
 	};

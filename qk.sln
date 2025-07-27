@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "qk_gui", "qk_gui\qk_gui.vcx
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "imgui", "imgui\imgui.vcxproj", "{DC45B860-DC1D-4D17-A2FA-7004B4CBDD60}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SimpleMath", "SimpleMath\SimpleMath.vcxproj", "{FB77E580-B840-426C-B9E9-D6EC38857E21}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -27,6 +29,10 @@ Global
 		{DC45B860-DC1D-4D17-A2FA-7004B4CBDD60}.Debug|x64.Build.0 = Debug|x64
 		{DC45B860-DC1D-4D17-A2FA-7004B4CBDD60}.Release|x64.ActiveCfg = Release|x64
 		{DC45B860-DC1D-4D17-A2FA-7004B4CBDD60}.Release|x64.Build.0 = Release|x64
+		{FB77E580-B840-426C-B9E9-D6EC38857E21}.Debug|x64.ActiveCfg = Debug|x64
+		{FB77E580-B840-426C-B9E9-D6EC38857E21}.Debug|x64.Build.0 = Debug|x64
+		{FB77E580-B840-426C-B9E9-D6EC38857E21}.Release|x64.ActiveCfg = Release|x64
+		{FB77E580-B840-426C-B9E9-D6EC38857E21}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
