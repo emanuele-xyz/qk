@@ -36,6 +36,9 @@ namespace qk
             } camera;
             struct
             {
+                v3 position;
+                v3 rotation;
+                v3 scaling;
                 MeshID mesh_id;
             } model;
         };

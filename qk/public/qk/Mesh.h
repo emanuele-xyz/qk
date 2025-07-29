@@ -13,7 +13,9 @@ namespace qk
         constexpr MeshID() : m_id{} {}
         constexpr explicit MeshID(std::size_t id) : m_id{ id } {}
     public:
-        bool operator==(const MeshID& other) const { return m_id == other.m_id; }
+        explicit operator std::size_t() const noexcept { return m_id; }
+    public:
+        bool operator==(const MeshID& other) const noexcept { return m_id == other.m_id; }
     private:
         std::size_t m_id;
     };

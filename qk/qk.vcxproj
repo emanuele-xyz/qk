@@ -70,6 +70,14 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <FxCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir)\hlsl\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ShaderModel>5.0</ShaderModel>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <VariableName>%(Filename)_bytes</VariableName>
+      <HeaderFileOutput>$(ProjectDir)\private\qk\hlsl\%(Filename).h</HeaderFileOutput>
+      <ObjectFileOutput />
+    </FxCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -89,6 +97,14 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <FxCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir)\hlsl\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ShaderModel>5.0</ShaderModel>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <VariableName>%(Filename)_bytes</VariableName>
+      <HeaderFileOutput>$(ProjectDir)\private\qk\hlsl\%(Filename).h</HeaderFileOutput>
+      <ObjectFileOutput />
+    </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="private\qk\Commons.h" />
@@ -110,6 +126,26 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="src\Renderer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="hlsl\include\qk\OpaquePass.hlsli" />
+    <CopyFileToFolders Include="hlsl\include\qk\OpaquePassConstants.hlsli">
+      <FileType>Document</FileType>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)\private\qk\hlsl\</DestinationFolders>
+      <DestinationFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(Filename).h</DestinationFileName>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)\private\qk\hlsl\</DestinationFolders>
+      <DestinationFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(Filename).h</DestinationFileName>
+    </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="hlsl\src\OpaquePassPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="hlsl\src\OpaquePassVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

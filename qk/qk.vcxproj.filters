@@ -60,4 +60,14 @@
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="hlsl\include\qk\OpaquePass.hlsli" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="hlsl\src\OpaquePassVS.hlsl" />
+    <FxCompile Include="hlsl\src\OpaquePassPS.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="hlsl\include\qk\OpaquePassConstants.hlsli" />
+  </ItemGroup>
 </Project>

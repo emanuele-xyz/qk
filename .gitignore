@@ -370,3 +370,6 @@ FodyWeavers.xsd
 
 # imgui.ini
 imgui.ini
+
+# compiled shader bytecode into a header
+qk/private/qk/hlsl
