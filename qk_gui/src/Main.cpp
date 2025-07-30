@@ -92,8 +92,9 @@ namespace qk_gui
         // add node to nodes list // TODO: to be removed
         {
             nodes.emplace_back(qk::Node::MakeBackground(qk::v4{ 1.0f, 0.0f, 1.0f, 1.0f }));
-            nodes.emplace_back(qk::Node::MakeCamera(qk::v3{ 0.0f, 5.0f, 0.0f }, qk::v3{}, qk::v3{ 0.0f, 1.0f, 0.0f }, 45.0f, 0.01f, 100.0f));
-            nodes.emplace_back(qk::Node::MakeModel(qk::CUBE_MESH_ID));
+            nodes.emplace_back(qk::Node::MakeCamera(qk::v3{ 0.0f, 2.0f, 5.0f }, qk::v3{}, qk::v3{ 0.0f, 1.0f, 0.0f }, 45.0f, 0.01f, 100.0f));
+            nodes.emplace_back(qk::Node::MakeObject(qk::v3{}, qk::v3{ -90.0f, 0.0f, 0.0f }, qk::v3{ 10.0f, 10.0f, 1.0f }, qk::QUAD_MESH_ID));
+            nodes.emplace_back(qk::Node::MakeObject(qk::v3{}, qk::v3{}, qk::v3{ 1.0f, 1.0f, 1.0f }, qk::CUBE_MESH_ID));
         }
 
         while (app_context.is_running)

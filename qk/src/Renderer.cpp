@@ -190,6 +190,7 @@ namespace qk
         wrl::ComPtr<ID3D11VertexShader> m_vs;
         wrl::ComPtr<ID3D11PixelShader> m_ps;
         wrl::ComPtr<ID3D11InputLayout> m_il;
+        wrl::ComPtr<ID3D11RasterizerState> m_rs;
         wrl::ComPtr<ID3D11Buffer> m_cb_scene;
         wrl::ComPtr<ID3D11Buffer> m_cb_object;
     };
@@ -201,6 +202,7 @@ namespace qk
         , m_vs{}
         , m_ps{}
         , m_il{}
+        , m_rs{}
         , m_cb_scene{}
         , m_cb_object{}
     {
@@ -219,6 +221,22 @@ namespace qk
                 { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
             };
             qk_CheckHR(m_dev->CreateInputLayout(desc, std::size(desc), OpaquePassVS_bytes, sizeof(OpaquePassVS_bytes), m_il.ReleaseAndGetAddressOf()));
+        }
+
+        // rasterizer state
+        {
+            D3D11_RASTERIZER_DESC desc{};
+            desc.FillMode = D3D11_FILL_SOLID;
+            desc.CullMode = D3D11_CULL_BACK;
+            desc.FrontCounterClockwise = true;
+            desc.DepthBias = 0;
+            desc.DepthBiasClamp = 0.0f;
+            desc.SlopeScaledDepthBias = 0.0f;
+            desc.DepthClipEnable = true;
+            desc.ScissorEnable = false;
+            desc.MultisampleEnable = false;
+            desc.AntialiasedLineEnable = false;
+            qk_CheckHR(m_dev->CreateRasterizerState(&desc, m_rs.ReleaseAndGetAddressOf()));
         }
 
         // scene constant buffer
@@ -262,6 +280,7 @@ namespace qk
             m_ctx->VSSetConstantBuffers(0, std::size(cbufs), cbufs);
             m_ctx->PSSetShader(m_ps.Get(), nullptr, 0);
             m_ctx->PSSetConstantBuffers(0, std::size(cbufs), cbufs);
+            m_ctx->RSSetState(m_rs.Get());
             m_ctx->RSSetViewports(1, &m_viewport);
             m_ctx->OMSetRenderTargets(1, &rtv, nullptr);
         }
@@ -280,23 +299,23 @@ namespace qk
             constants->projection = Matrix::CreatePerspectiveFieldOfView(fov_rad, aspect, it->camera.near_plane, it->camera.far_plane);
         }
 
-        // loop over each model node and render it
+        // loop over each object node and render it
         for (const Node& node : nodes)
         {
-            if (node.type == NodeType::Model)
+            if (node.type == NodeType::Object)
             {
                 // compute object's model and normal matrices
                 Matrix model{};
                 Matrix normal{};
                 {
                     Vector3 rotation_rad{};
-                    rotation_rad.x = DirectX::XMConvertToRadians(node.model.rotation.x());
-                    rotation_rad.y = DirectX::XMConvertToRadians(node.model.rotation.y());
-                    rotation_rad.z = DirectX::XMConvertToRadians(node.model.rotation.z());
+                    rotation_rad.x = DirectX::XMConvertToRadians(node.object.rotation.x());
+                    rotation_rad.y = DirectX::XMConvertToRadians(node.object.rotation.y());
+                    rotation_rad.z = DirectX::XMConvertToRadians(node.object.rotation.z());
 
-                    Matrix translate{ Matrix::CreateTranslation(Vector3{ node.model.position.elems }) };
+                    Matrix translate{ Matrix::CreateTranslation(Vector3{ node.object.position.elems }) };
                     Matrix rotate{ Matrix::CreateFromYawPitchRoll(rotation_rad) };
-                    Matrix scale{ Matrix::CreateScale(Vector3{ node.model.scaling.elems }) };
+                    Matrix scale{ Matrix::CreateScale(Vector3{ node.object.scaling.elems }) };
                     model = scale * rotate * translate;
                     normal = scale * rotate;
                     normal.Invert();
@@ -314,7 +333,7 @@ namespace qk
                 // set mesh related pipeline state and submit draw call
                 {
                     // fetch mesh
-                    const Mesh& mesh{ m_meshes.at(static_cast<std::size_t>(node.model.mesh_id)) };
+                    const Mesh& mesh{ m_meshes.at(static_cast<std::size_t>(node.object.mesh_id)) };
 
                     // prepare data for pipeline state
                     ID3D11Buffer* vertices{ mesh.Vertices() };

@@ -22,11 +22,14 @@ namespace qk
         node.camera.far_plane = far_plane;
         return node;
     }
-    Node Node::MakeModel(MeshID mesh_id)
+    Node Node::MakeObject(v3 position, v3 rotation, v3 scaling, MeshID mesh_id)
     {
         Node node{};
-        node.type = NodeType::Model;
-        node.model.mesh_id = mesh_id;
+        node.type = NodeType::Object;
+        node.object.position = position;
+        node.object.rotation = rotation;
+        node.object.scaling = scaling;
+        node.object.mesh_id = mesh_id;
         return node;
     }
 }
