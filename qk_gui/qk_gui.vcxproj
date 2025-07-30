@@ -12,20 +12,22 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\D11.cpp" />
+    <ClCompile Include="src\Editor.cpp" />
     <ClCompile Include="src\ImGuiHandle.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\PCH.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="src\QkGUI.cpp" />
+    <ClCompile Include="src\Commons.cpp" />
     <ClCompile Include="src\W32.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\qk_gui\D11.h" />
+    <ClInclude Include="include\qk_gui\Editor.h" />
     <ClInclude Include="include\qk_gui\ImGuiHandle.h" />
     <ClInclude Include="include\qk_gui\PCH.h" />
-    <ClInclude Include="include\qk_gui\QkGUI.h" />
+    <ClInclude Include="include\qk_gui\Commons.h" />
     <ClInclude Include="include\qk_gui\W32.h" />
   </ItemGroup>
   <ItemGroup>

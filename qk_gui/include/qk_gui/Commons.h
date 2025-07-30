@@ -5,6 +5,7 @@
 
 #define qk_gui_Crash(msg) throw qk_gui::Crash{ msg }
 #define qk_gui_Check(p) do { if (!(p)) { qk_gui_Crash("check '" #p "' failed"); } } while (false)
+#define qk_gui_Unreachable() qk_gui_Crash("unreachable code path")
 
 namespace qk_gui
 {

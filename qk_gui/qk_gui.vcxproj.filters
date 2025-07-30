@@ -21,7 +21,7 @@
     <ClCompile Include="src\PCH.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\QkGUI.cpp">
+    <ClCompile Include="src\Commons.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\W32.cpp">
@@ -33,12 +33,15 @@
     <ClCompile Include="src\ImGuiHandle.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Editor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\qk_gui\PCH.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\qk_gui\QkGUI.h">
+    <ClInclude Include="include\qk_gui\Commons.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\qk_gui\W32.h">
@@ -48,6 +51,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\qk_gui\ImGuiHandle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\qk_gui\Editor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

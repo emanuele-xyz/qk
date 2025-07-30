@@ -12,6 +12,8 @@ namespace qk
         Object,
     };
 
+    const char* NodeTypeStr(NodeType type);
+
     struct Node
     {
         static Node MakeBackground(v4 color);

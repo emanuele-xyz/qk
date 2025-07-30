@@ -1,8 +1,21 @@
 #include <qk/PCH.h>
 #include <qk/Node.h>
+#include <qk/Commons.h>
 
 namespace qk
 {
+    const char* NodeTypeStr(NodeType type)
+    {
+        const char* str{};
+        switch (type)
+        {
+        case NodeType::Background: { str = "Background"; } break;
+        case NodeType::Camera: { str = "Camera"; } break;
+        case NodeType::Object: { str = "Object"; } break;
+        default: { qk_Unreachable(); } break;
+        }
+        return str;
+    }
     Node Node::MakeBackground(v4 color)
     {
         Node node{};

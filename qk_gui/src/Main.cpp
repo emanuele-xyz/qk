@@ -1,10 +1,9 @@
 #include <qk_gui/PCH.h>
-#include <qk_gui/QkGUI.h>
+#include <qk_gui/Commons.h>
 #include <qk_gui/W32.h>
 #include <qk_gui/D11.h>
 #include <qk_gui/ImGuiHandle.h>
-
-#include <qk/Qk.h>
+#include <qk_gui/Editor.h>
 
 #include <imgui.h>
 #include <imgui_impl_win32.h>
@@ -87,15 +86,7 @@ namespace qk_gui
         d11::FrameBuffer frame_buffer{ d3d_dev.Get(), swap_chain.Get() };
         ImGuiHandle imgui_handle{ window.Handle(), d3d_dev.Get(), d3d_ctx.Get() };
         qk::Renderer renderer{ d3d_dev.Get(), d3d_ctx.Get() };
-        std::vector<qk::Node> nodes{};
-
-        // add node to nodes list // TODO: to be removed
-        {
-            nodes.emplace_back(qk::Node::MakeBackground(qk::v4{ 1.0f, 0.0f, 1.0f, 1.0f }));
-            nodes.emplace_back(qk::Node::MakeCamera(qk::v3{ 0.0f, 2.0f, 5.0f }, qk::v3{}, qk::v3{ 0.0f, 1.0f, 0.0f }, 45.0f, 0.01f, 100.0f));
-            nodes.emplace_back(qk::Node::MakeObject(qk::v3{}, qk::v3{ -90.0f, 0.0f, 0.0f }, qk::v3{ 10.0f, 10.0f, 1.0f }, qk::QUAD_MESH_ID));
-            nodes.emplace_back(qk::Node::MakeObject(qk::v3{}, qk::v3{}, qk::v3{ 1.0f, 1.0f, 1.0f }, qk::CUBE_MESH_ID));
-        }
+        Editor editor{};
 
         while (app_context.is_running)
         {
@@ -126,12 +117,12 @@ namespace qk_gui
             }
 
             // render scene to the back buffer
-            renderer.Render(window_w, window_h, frame_buffer.BackBufferRTV(), nodes);
+            renderer.Render(window_w, window_h, frame_buffer.BackBufferRTV(), editor.Nodes());
 
-            // render imgui
+            // imgui logic
             imgui_handle.BeginFrame();
             {
-                ImGui::ShowDemoWindow();
+                editor.UpdateAndRender();
             }
             imgui_handle.EndFrame(frame_buffer.BackBufferRTV());
 

@@ -6,6 +6,7 @@
 #include <iostream>
 #include <memory>
 #include <print>
+#include <span>
 #include <stacktrace>
 #include <stdexcept>
 #include <sstream>
