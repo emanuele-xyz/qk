@@ -17,7 +17,7 @@ namespace qk
     struct Node
     {
         static Node MakeBackground(v4 color);
-        static Node MakeCamera(v3 eye, v3 target, v3 up, float fov_deg, float near_plane, float far_plane);
+        static Node MakeCamera(bool is_main, v3 eye, v3 target, v3 up, float fov_deg, float near_plane, float far_plane);
         static Node MakeObject(v3 position, v3 rotation, v3 scaling, MeshID mesh_id);
 
         NodeType type;
@@ -29,6 +29,7 @@ namespace qk
             } background;
             struct
             {
+                bool is_main;
                 v3 eye;
                 v3 target;
                 v3 up;

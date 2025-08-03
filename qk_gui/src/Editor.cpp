@@ -1,6 +1,7 @@
 #include <qk_gui/PCH.h>
 #include <qk_gui/Editor.h>
 #include <qk_gui/Commons.h>
+#include <qk_gui/Math.h>
 
 #include <imgui.h>
 
@@ -8,14 +9,63 @@ namespace qk_gui
 {
     Editor::Editor()
         : m_nodes{}
+        , m_to_be_removed_idx{}
     {
         // TODO: to be removed
         m_nodes.emplace_back(qk::Node::MakeBackground(qk::v4{ 1.0f, 0.0f, 1.0f, 1.0f }));
-        m_nodes.emplace_back(qk::Node::MakeCamera(qk::v3{ 0.0f, 2.0f, 5.0f }, qk::v3{}, qk::v3{ 0.0f, 1.0f, 0.0f }, 45.0f, 0.01f, 100.0f));
         m_nodes.emplace_back(qk::Node::MakeObject(qk::v3{}, qk::v3{ -90.0f, 0.0f, 0.0f }, qk::v3{ 10.0f, 10.0f, 1.0f }, qk::QUAD_MESH_ID));
         m_nodes.emplace_back(qk::Node::MakeObject(qk::v3{}, qk::v3{}, qk::v3{ 1.0f, 1.0f, 1.0f }, qk::CUBE_MESH_ID));
+        m_nodes.emplace_back(qk::Node::MakeCamera(true, qk::v3{ 0.0f, 2.0f, 5.0f }, qk::v3{}, qk::v3{ 0.0f, 1.0f, 0.0f }, 45.0f, 0.01f, 100.0f));
+        m_nodes.emplace_back(qk::Node::MakeCamera(false, qk::v3{ 0.0f, 2.0f, 5.0f }, qk::v3{}, qk::v3{ 0.0f, 1.0f, 0.0f }, 45.0f, 0.01f, 100.0f));
+        m_nodes.emplace_back(qk::Node::MakeCamera(false, qk::v3{ 0.0f, 2.0f, 5.0f }, qk::v3{}, qk::v3{ 0.0f, 1.0f, 0.0f }, 45.0f, 0.01f, 100.0f));
     }
-    void Editor::UpdateAndRender()
+    void Editor::Update()
+    {
+        // if there is a node to be removed, do it
+        if (m_to_be_removed_idx)
+        {
+            std::swap(m_nodes[m_to_be_removed_idx.value()], m_nodes.back()); // swap the node to be removed with the last one
+            m_nodes.pop_back(); // remove the last one
+            m_to_be_removed_idx = {}; // the node has been removed
+        }
+
+        // update camera
+        {
+            qk::Node* camera_node{};
+
+            // get a pointer to the node representing the main camera
+            {
+                // search for the last main camera node
+                auto it{ std::find_if(m_nodes.rbegin(), m_nodes.rend(), [](const qk::Node& n) { return n.type == qk::NodeType::Camera && n.camera.is_main; }) };
+                if (it != m_nodes.rend()) // node found
+                {
+                    camera_node = std::to_address(it);
+                }
+                else // no maincamera node found
+                {
+                    // search for the last camera node
+                    it = std::find_if(m_nodes.rbegin(), m_nodes.rend(), [](const qk::Node& n) { return n.type == qk::NodeType::Camera; });
+                    if (it != m_nodes.rend()) // node found
+                    {
+                        it->camera.is_main = true; // make camera node main
+                        camera_node = std::to_address(it);
+                    }
+                }
+            }
+
+            // update main camera, if it exists
+            if (camera_node)
+            {
+                Vector3 eye{ camera_node->camera.eye.elems };
+                Vector3 target{ camera_node->camera.target.elems };
+                eye += Vector3{ 0.001f, 0.0f, 0.0f }; // TODO: temporary
+                target += Vector3{ 0.001f, 0.0f, 0.0f }; // TODO: temporary
+                camera_node->camera.eye = qk::v3{ eye.x, eye.y, eye.z };
+                camera_node->camera.target = qk::v3{ target.x, target.y, target.z };
+            }
+        }
+    }
+    void Editor::Render()
     {
         ImGui::Begin("QkGUI");
         {
@@ -25,14 +75,28 @@ namespace qk_gui
 
                 ImGui::PushID(static_cast<int>(i));
                 {
-                    if (ImGui::CollapsingHeader(qk::NodeTypeStr(node.type), ImGuiTreeNodeFlags_DefaultOpen))
+                    std::string node_label{ qk::NodeTypeStr(node.type) };
+
+                    if (node.type == qk::NodeType::Camera && node.camera.is_main)
                     {
+                        node_label += " (Main)";
+                    }
+
+                    if (ImGui::CollapsingHeader(node_label.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+                    {
+                        // render node ui
                         switch (node.type)
                         {
-                        case qk::NodeType::Background: { UpdateAndRenderBackground(node); } break;
-                        case qk::NodeType::Camera: { UpdateAndRenderCamera(node); } break;
-                        case qk::NodeType::Object: { UpdateAndRenderObject(node); } break;
+                        case qk::NodeType::Background: { RenderBackgroundNode(node); } break;
+                        case qk::NodeType::Camera: { RenderCameraNode(node); } break;
+                        case qk::NodeType::Object: { RenderObjectNode(node); } break;
                         default: { qk_gui_Unreachable(); } break;
+                        }
+
+                        // render remove node button
+                        if (ImGui::Button("Remove Node"))
+                        {
+                            m_to_be_removed_idx = i;
                         }
                     }
                 }
@@ -41,11 +105,11 @@ namespace qk_gui
         }
         ImGui::End();
     }
-    void Editor::UpdateAndRenderBackground(qk::Node& node)
+    void Editor::RenderBackgroundNode(qk::Node& node)
     {
         ImGui::ColorEdit3("Color", node.background.color.elems);
     }
-    void Editor::UpdateAndRenderCamera(qk::Node& node)
+    void Editor::RenderCameraNode(qk::Node& node)
     {
         ImGui::DragFloat3("Eye", node.camera.eye.elems);
         ImGui::DragFloat3("Target", node.camera.target.elems);
@@ -53,12 +117,29 @@ namespace qk_gui
         ImGui::DragFloat("FOV (degrees)", &node.camera.fov_deg);
         ImGui::DragFloat("Near Plane", &node.camera.near_plane);
         ImGui::DragFloat("Far Plane", &node.camera.far_plane);
+        if (!node.camera.is_main) // render make main camera button if camera is not a main camera
+        {
+            if (ImGui::Button("Make Main"))
+            {
+                // when marking a camera as main, we need to unmark all the other cameras
+                for (qk::Node& n : m_nodes)
+                {
+                    if (n.type == qk::NodeType::Camera)
+                    {
+                        n.camera.is_main = false;
+                    }
+                }
+
+                // mark this camera node as a main camera
+                node.camera.is_main = true;
+            }
+        }
     }
-    void Editor::UpdateAndRenderObject(qk::Node& node)
+    void Editor::RenderObjectNode(qk::Node& node)
     {
-        ImGui::DragFloat3("position", node.object.position.elems);
-        ImGui::DragFloat3("rotation", node.object.rotation.elems);
-        ImGui::DragFloat3("scaling", node.object.scaling.elems);
+        ImGui::DragFloat3("Position", node.object.position.elems);
+        ImGui::DragFloat3("Rotation", node.object.rotation.elems);
+        ImGui::DragFloat3("Scaling", node.object.scaling.elems);
 
         // TODO: use combo for mesh
         //const char* items[] = { "AAAA", "BBBB", "CCCC", "DDDD", "EEEE", "FFFF", "GGGG", "HHHH", "IIII", "JJJJ", "KKKK", "LLLLLLL", "MMMM", "OOOOOOO", "PPPP", "QQQQQQQQQQ", "RRR", "SSSS" };

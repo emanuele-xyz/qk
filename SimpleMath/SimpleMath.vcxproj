@@ -70,10 +70,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="include\SimpleMath.h" />
+    <ClInclude Include="public\SimpleMath.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="include\SimpleMath.inl" />
+    <None Include="public\SimpleMath.inl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

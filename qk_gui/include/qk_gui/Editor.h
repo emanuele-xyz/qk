@@ -2,8 +2,9 @@
 
 #include <qk/Qk.h>
 
-#include <vector>
+#include <optional>
 #include <span>
+#include <vector>
 
 namespace qk_gui
 {
@@ -19,12 +20,14 @@ namespace qk_gui
     public:
         std::span<const qk::Node> Nodes() const noexcept { return m_nodes; }
     public:
-        void UpdateAndRender();
+        void Update();
+        void Render();
     private:
-        void UpdateAndRenderBackground(qk::Node& node);
-        void UpdateAndRenderCamera(qk::Node& node);
-        void UpdateAndRenderObject(qk::Node& node);
+        void RenderBackgroundNode(qk::Node& node);
+        void RenderCameraNode(qk::Node& node);
+        void RenderObjectNode(qk::Node& node);
     private:
         std::vector<qk::Node> m_nodes;
+        std::optional<std::size_t> m_to_be_removed_idx;
     };
 }

@@ -23,10 +23,11 @@ namespace qk
         node.background.color = color;
         return node;
     }
-    Node Node::MakeCamera(v3 eye, v3 target, v3 up, float fov_deg, float near_plane, float far_plane)
+    Node Node::MakeCamera(bool is_main, v3 eye, v3 target, v3 up, float fov_deg, float near_plane, float far_plane)
     {
         Node node{};
         node.type = NodeType::Camera;
+        node.camera.is_main = is_main;
         node.camera.eye = eye;
         node.camera.target = target;
         node.camera.up = up;

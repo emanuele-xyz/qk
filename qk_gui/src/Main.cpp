@@ -116,13 +116,16 @@ namespace qk_gui
                 app_context.did_resize = false;
             }
 
+            // update editor state
+            editor.Update();
+
             // render scene to the back buffer
             renderer.Render(window_w, window_h, frame_buffer.BackBufferRTV(), editor.Nodes());
 
-            // imgui logic
+            // render editor ui
             imgui_handle.BeginFrame();
             {
-                editor.UpdateAndRender();
+                editor.Render();
             }
             imgui_handle.EndFrame(frame_buffer.BackBufferRTV());
 

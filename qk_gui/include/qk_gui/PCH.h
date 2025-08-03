@@ -4,7 +4,9 @@
 #include <format>
 #include <iomanip>
 #include <iostream>
+#include <iterator>
 #include <memory>
+#include <optional>
 #include <print>
 #include <span>
 #include <stacktrace>

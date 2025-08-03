@@ -56,5 +56,8 @@
     <ClInclude Include="include\qk_gui\Editor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\qk_gui\Math.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

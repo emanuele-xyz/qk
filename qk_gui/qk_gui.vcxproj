@@ -26,6 +26,7 @@
     <ClInclude Include="include\qk_gui\D11.h" />
     <ClInclude Include="include\qk_gui\Editor.h" />
     <ClInclude Include="include\qk_gui\ImGuiHandle.h" />
+    <ClInclude Include="include\qk_gui\Math.h" />
     <ClInclude Include="include\qk_gui\PCH.h" />
     <ClInclude Include="include\qk_gui\Commons.h" />
     <ClInclude Include="include\qk_gui\W32.h" />
@@ -88,7 +89,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)\include;$(SolutionDir)\qk\public;$(SolutionDir)\imgui\public</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\include;$(SolutionDir)\qk\public;$(SolutionDir)\imgui\public;$(SolutionDir)\SimpleMath\public</AdditionalIncludeDirectories>
       <TreatWarningAsError>true</TreatWarningAsError>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -107,7 +108,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)\include;$(SolutionDir)\qk\public;$(SolutionDir)\imgui\public</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\include;$(SolutionDir)\qk\public;$(SolutionDir)\imgui\public;$(SolutionDir)\SimpleMath\public</AdditionalIncludeDirectories>
       <TreatWarningAsError>true</TreatWarningAsError>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>Use</PrecompiledHeader>

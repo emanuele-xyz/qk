@@ -285,18 +285,24 @@ namespace qk
             m_ctx->OMSetRenderTargets(1, &rtv, nullptr);
         }
 
-        // build the view and projection matrices from the last camera node and then upload them to the GPU
+        // find the main camera, build its view and projection matrices, and upload them to the GPU
         {
-            auto it{ std::find_if(nodes.rbegin(), nodes.rend(), [](const Node& n) { return n.type == NodeType::Camera; }) };
-            qk_Check(it != nodes.rend());
-
-            float aspect{ m_viewport.Width / m_viewport.Height };
-            float fov_rad{ DirectX::XMConvertToRadians(it->camera.fov_deg) };
+            Matrix view{}, projection{};
+            
+            // we take as main camera the last main camera in the list
+            auto it{ std::find_if(nodes.rbegin(), nodes.rend(), [](const Node& n) { return n.type == NodeType::Camera && n.camera.is_main; }) };
+            if (it != nodes.rend()) // main camera found
+            {
+                float aspect{ m_viewport.Width / m_viewport.Height };
+                float fov_rad{ DirectX::XMConvertToRadians(it->camera.fov_deg) };
+                view = Matrix::CreateLookAt(Vector3{ it->camera.eye.elems }, Vector3{ it->camera.target.elems }, { 0.0f, 1.0f, 0.0f });
+                projection = Matrix::CreatePerspectiveFieldOfView(fov_rad, aspect, it->camera.near_plane, it->camera.far_plane);
+            }
 
             d11::SubresourceMap map{ m_ctx, m_cb_scene.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
             auto constants{ static_cast<OpaquePassSceneConstants*>(map.Data()) };
-            constants->view = Matrix::CreateLookAt(Vector3{ it->camera.eye.elems }, Vector3{ it->camera.target.elems }, { 0.0f, 1.0f, 0.0f });
-            constants->projection = Matrix::CreatePerspectiveFieldOfView(fov_rad, aspect, it->camera.near_plane, it->camera.far_plane);
+            constants->view = view;
+            constants->projection = projection;
         }
 
         // loop over each object node and render it
