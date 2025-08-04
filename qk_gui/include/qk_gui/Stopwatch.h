@@ -9,14 +9,14 @@ namespace qk_gui
     private:
         using Time = std::chrono::time_point<std::chrono::high_resolution_clock>;
     public:
-        Stopwatch() : m_begin{}, m_end{} {}
+        Stopwatch();
     public:
-        float ElapsedSec() const noexcept { return std::chrono::duration_cast<std::chrono::duration<float>>(m_end - m_begin).count(); }
+        void Mark() noexcept;
     public:
-        void Begin() noexcept { m_begin = std::chrono::high_resolution_clock::now(); }
-        void End() noexcept { m_end = std::chrono::high_resolution_clock::now(); }
+        float ElapsedSec() const noexcept { return m_elapsed_sec; }
+    public:
     private:
-        Time m_begin;
-        Time m_end;
+        Time m_last_time;
+        float m_elapsed_sec;
     };
 }

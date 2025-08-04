@@ -20,7 +20,7 @@ namespace qk_gui
         m_nodes.emplace_back(qk::Node::MakeCamera({ false, qk::v3{ 0.0f, 2.0f, 5.0f }, qk::v3{}, qk::v3{ 0.0f, 1.0f, 0.0f }, 45.0f, 0.01f, 100.0f }));
         m_nodes.emplace_back(qk::Node::MakeCamera({ false, qk::v3{ 0.0f, 2.0f, 5.0f }, qk::v3{}, qk::v3{ 0.0f, 1.0f, 0.0f }, 45.0f, 0.01f, 100.0f }));
     }
-    void Editor::Update()
+    void Editor::Update(float dt)
     {
         // if there is a node to be removed, do it
         if (m_to_be_removed_idx)
@@ -86,9 +86,9 @@ namespace qk_gui
                 move.Normalize();
 
                 // apply movement to camera's position and target vectors
-                eye += move; // TODO: make it dt dependant
-                target += move; // TODO: make it dt dependant
-                
+                eye += move * dt;
+                target += move * dt;
+
                 // write new camera position and target back into the node
                 camera_node->camera.eye = qk::v3{ eye.x, eye.y, eye.z };
                 camera_node->camera.target = qk::v3{ target.x, target.y, target.z };

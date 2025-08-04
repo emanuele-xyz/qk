@@ -21,7 +21,7 @@ namespace qk_gui
     public:
         std::span<const qk::Node> Nodes() const noexcept { return m_nodes; }
     public:
-        void Update();
+        void Update(float dt);
         void Render();
     private:
         void RenderBackgroundNode(qk::Node& node);

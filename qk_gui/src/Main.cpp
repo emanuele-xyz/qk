@@ -5,6 +5,7 @@
 #include <qk_gui/ImGuiHandle.h>
 #include <qk_gui/Keyboard.h>
 #include <qk_gui/Editor.h>
+#include <qk_gui/Stopwatch.h>
 
 #include <imgui.h>
 #include <imgui_impl_win32.h>
@@ -89,6 +90,7 @@ namespace qk_gui
         qk::Renderer renderer{ d3d_dev.Get(), d3d_ctx.Get() };
         Keyboard keyboard{};
         Editor editor{ keyboard };
+        Stopwatch stopwatch{};
 
         while (app_context.is_running)
         {
@@ -121,7 +123,7 @@ namespace qk_gui
             keyboard.Update();
 
             // update editor state
-            editor.Update();
+            editor.Update(stopwatch.ElapsedSec());
 
             // render scene to the back buffer
             renderer.Render(window_w, window_h, frame_buffer.BackBufferRTV(), editor.Nodes());
@@ -135,6 +137,9 @@ namespace qk_gui
 
             // present
             qk_gui_CheckHR(swap_chain->Present(1, 0)); // use vsync
+
+            // update stopwatch to keep track of how much time the frame took
+            stopwatch.Mark();
         }
     }
 }
