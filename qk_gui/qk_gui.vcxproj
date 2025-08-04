@@ -14,6 +14,7 @@
     <ClCompile Include="src\D11.cpp" />
     <ClCompile Include="src\Editor.cpp" />
     <ClCompile Include="src\ImGuiHandle.cpp" />
+    <ClCompile Include="src\Keyboard.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\PCH.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -26,6 +27,7 @@
     <ClInclude Include="include\qk_gui\D11.h" />
     <ClInclude Include="include\qk_gui\Editor.h" />
     <ClInclude Include="include\qk_gui\ImGuiHandle.h" />
+    <ClInclude Include="include\qk_gui\Keyboard.h" />
     <ClInclude Include="include\qk_gui\Math.h" />
     <ClInclude Include="include\qk_gui\PCH.h" />
     <ClInclude Include="include\qk_gui\Commons.h" />

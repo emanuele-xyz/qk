@@ -3,6 +3,7 @@
 #include <qk_gui/W32.h>
 #include <qk_gui/D11.h>
 #include <qk_gui/ImGuiHandle.h>
+#include <qk_gui/Keyboard.h>
 #include <qk_gui/Editor.h>
 
 #include <imgui.h>
@@ -86,7 +87,8 @@ namespace qk_gui
         d11::FrameBuffer frame_buffer{ d3d_dev.Get(), swap_chain.Get() };
         ImGuiHandle imgui_handle{ window.Handle(), d3d_dev.Get(), d3d_ctx.Get() };
         qk::Renderer renderer{ d3d_dev.Get(), d3d_ctx.Get() };
-        Editor editor{};
+        Keyboard keyboard{};
+        Editor editor{ keyboard };
 
         while (app_context.is_running)
         {
@@ -115,6 +117,8 @@ namespace qk_gui
                 // resize event has been handled
                 app_context.did_resize = false;
             }
+
+            keyboard.Update();
 
             // update editor state
             editor.Update();

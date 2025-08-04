@@ -1,6 +1,7 @@
 #pragma once
 
 #include <qk/Qk.h>
+#include <qk_gui/Keyboard.h>
 
 #include <optional>
 #include <span>
@@ -11,7 +12,7 @@ namespace qk_gui
     class Editor
     {
     public:
-        Editor();
+        Editor(const Keyboard& keyboard);
         ~Editor() = default;
         Editor(const Editor&) = delete;
         Editor(Editor&&) noexcept = delete;
@@ -27,6 +28,7 @@ namespace qk_gui
         void RenderCameraNode(qk::Node& node);
         void RenderObjectNode(qk::Node& node);
     private:
+        const Keyboard& m_keyboard;
         std::vector<qk::Node> m_nodes;
         std::optional<std::size_t> m_to_be_removed_idx;
     };

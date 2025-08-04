@@ -7,8 +7,9 @@
 
 namespace qk_gui
 {
-    Editor::Editor()
-        : m_nodes{}
+    Editor::Editor(const Keyboard& keyboard)
+        : m_keyboard{ keyboard }
+        , m_nodes{}
         , m_to_be_removed_idx{}
     {
         // TODO: to be removed
@@ -57,8 +58,38 @@ namespace qk_gui
             {
                 Vector3 eye{ camera_node->camera.eye.elems };
                 Vector3 target{ camera_node->camera.target.elems };
-                eye += Vector3{ 0.001f, 0.0f, 0.0f }; // TODO: temporary
-                target += Vector3{ 0.001f, 0.0f, 0.0f }; // TODO: temporary
+                Vector3 up{ camera_node->camera.up.elems };
+
+                // compute camera forward and camera right
+                Vector3 forward{ target - eye };
+                Vector3 right{ forward };
+                right = right.Cross(up);
+
+                // compute move vector based on keyboard input
+                Vector3 move{};
+                if (m_keyboard.KeyState(Key::W))
+                {
+                    move += forward;
+                }
+                if (m_keyboard.KeyState(Key::S))
+                {
+                    move -= forward;
+                }
+                if (m_keyboard.KeyState(Key::D))
+                {
+                    move += right;
+                }
+                if (m_keyboard.KeyState(Key::A))
+                {
+                    move -= right;
+                }
+                move.Normalize();
+
+                // apply movement to camera's position and target vectors
+                eye += move; // TODO: make it dt dependant
+                target += move; // TODO: make it dt dependant
+                
+                // write new camera position and target back into the node
                 camera_node->camera.eye = qk::v3{ eye.x, eye.y, eye.z };
                 camera_node->camera.target = qk::v3{ target.x, target.y, target.z };
             }
