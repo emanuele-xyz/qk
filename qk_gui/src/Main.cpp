@@ -132,6 +132,13 @@ namespace qk_gui
             imgui_handle.BeginFrame();
             {
                 editor.Render();
+
+                ImGui::Begin("Frame Data");
+                {
+                    ImGui::Text("Delta Time: %.2f sec", stopwatch.ElapsedSec());
+                    ImGui::Text("Delta Time: %.2f msec", stopwatch.ElapsedSec() * 1000.0f);
+                }
+                ImGui::End();
             }
             imgui_handle.EndFrame(frame_buffer.BackBufferRTV());
 
