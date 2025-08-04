@@ -31,6 +31,7 @@
     <ClInclude Include="include\qk_gui\Math.h" />
     <ClInclude Include="include\qk_gui\PCH.h" />
     <ClInclude Include="include\qk_gui\Commons.h" />
+    <ClInclude Include="include\qk_gui\Stopwatch.h" />
     <ClInclude Include="include\qk_gui\W32.h" />
   </ItemGroup>
   <ItemGroup>
