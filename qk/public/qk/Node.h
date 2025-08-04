@@ -10,6 +10,7 @@ namespace qk
         Background,
         Camera,
         Object,
+        Count
     };
 
     const char* NodeTypeStr(NodeType type);

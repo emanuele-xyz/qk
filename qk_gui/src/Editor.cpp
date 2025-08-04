@@ -76,6 +76,26 @@ namespace qk_gui
                 {
                     if (ImGui::CollapsingHeader(qk::NodeTypeStr(node.type), ImGuiTreeNodeFlags_DefaultOpen))
                     {
+                        // render node type
+                        if (ImGui::BeginCombo("Type", qk::NodeTypeStr(node.type)))
+                        {
+                            for (int type_idx{}; type_idx < static_cast<int>(qk::NodeType::Count); type_idx++)
+                            {
+                                qk::NodeType type{ static_cast<qk::NodeType>(type_idx) };
+                                bool is_selected{ node.type == type };
+                                if (ImGui::Selectable(qk::NodeTypeStr(type), is_selected))
+                                {
+                                    node = qk::Node{}; // TODO: make default node for the selected type
+                                    node.type = type;
+                                }
+                                if (is_selected)
+                                {
+                                    ImGui::SetItemDefaultFocus();
+                                }
+                            }
+                            ImGui::EndCombo();
+                        }
+
                         // render node ui
                         switch (node.type)
                         {
