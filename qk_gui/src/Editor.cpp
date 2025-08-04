@@ -7,6 +7,9 @@
 
 namespace qk_gui
 {
+    constexpr float CAMERA_MOVE_SPEED{ 10.0f };
+    constexpr float CAMERA_MOVE_SPEED_MULTIPLIER{ 2.0f };
+
     Editor::Editor(const Keyboard& keyboard)
         : m_keyboard{ keyboard }
         , m_nodes{}
@@ -85,9 +88,16 @@ namespace qk_gui
                 }
                 move.Normalize();
 
+                // compute speed
+                float speed{ CAMERA_MOVE_SPEED };
+                if (m_keyboard.KeyState(Key::Shift))
+                {
+                    speed *= CAMERA_MOVE_SPEED_MULTIPLIER;
+                }
+
                 // apply movement to camera's position and target vectors
-                eye += move * dt;
-                target += move * dt;
+                eye += move * speed * dt;
+                target += move * speed * dt;
 
                 // write new camera position and target back into the node
                 camera_node->camera.eye = qk::v3{ eye.x, eye.y, eye.z };

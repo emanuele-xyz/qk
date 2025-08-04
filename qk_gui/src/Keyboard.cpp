@@ -14,6 +14,7 @@ namespace qk_gui
         case Key::A: { code = 'A'; } break;
         case Key::S: { code = 'S'; } break;
         case Key::D: { code = 'D'; } break;
+        case Key::Shift: { code = VK_SHIFT; } break;
         default: { qk_gui_Unreachable(); } break;
         }
         return code;

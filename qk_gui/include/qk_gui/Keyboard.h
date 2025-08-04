@@ -10,6 +10,7 @@ namespace qk_gui
         A,
         S,
         D,
+        Shift,
         Count
     };
 
