@@ -16,34 +16,37 @@ namespace qk
         }
         return str;
     }
-    Node Node::MakeBackground(v4 color)
+    Node Node::MakeDefault(NodeType type)
+    {
+        Node node{};
+        switch (type)
+        {
+        case NodeType::Background: { node = DEFAULT_BACKGROUND; } break;
+        case NodeType::Camera: { node = DEFAULT_CAMERA; } break;
+        case NodeType::Object: { node = DEFAULT_OBJECT; } break;
+        default: { qk_Unreachable(); } break;
+        }
+        return node;
+    }
+    Node Node::MakeBackground(Background background)
     {
         Node node{};
         node.type = NodeType::Background;
-        node.background.color = color;
+        node.background = background;
         return node;
     }
-    Node Node::MakeCamera(bool is_main, v3 eye, v3 target, v3 up, float fov_deg, float near_plane, float far_plane)
+    Node Node::MakeCamera(Camera camera)
     {
         Node node{};
         node.type = NodeType::Camera;
-        node.camera.is_main = is_main;
-        node.camera.eye = eye;
-        node.camera.target = target;
-        node.camera.up = up;
-        node.camera.fov_deg = fov_deg;
-        node.camera.near_plane = near_plane;
-        node.camera.far_plane = far_plane;
+        node.camera = camera;
         return node;
     }
-    Node Node::MakeObject(v3 position, v3 rotation, v3 scaling, MeshID mesh_id)
+    Node Node::MakeObject(Object object)
     {
         Node node{};
         node.type = NodeType::Object;
-        node.object.position = position;
-        node.object.rotation = rotation;
-        node.object.scaling = scaling;
-        node.object.mesh_id = mesh_id;
+        node.object = object;
         return node;
     }
 }

@@ -12,12 +12,12 @@ namespace qk_gui
         , m_to_be_removed_idx{}
     {
         // TODO: to be removed
-        m_nodes.emplace_back(qk::Node::MakeBackground(qk::v4{ 1.0f, 0.0f, 1.0f, 1.0f }));
-        m_nodes.emplace_back(qk::Node::MakeObject(qk::v3{}, qk::v3{ -90.0f, 0.0f, 0.0f }, qk::v3{ 10.0f, 10.0f, 1.0f }, qk::QUAD_MESH_ID));
-        m_nodes.emplace_back(qk::Node::MakeObject(qk::v3{}, qk::v3{}, qk::v3{ 1.0f, 1.0f, 1.0f }, qk::CUBE_MESH_ID));
-        m_nodes.emplace_back(qk::Node::MakeCamera(true, qk::v3{ 0.0f, 2.0f, 5.0f }, qk::v3{}, qk::v3{ 0.0f, 1.0f, 0.0f }, 45.0f, 0.01f, 100.0f));
-        m_nodes.emplace_back(qk::Node::MakeCamera(false, qk::v3{ 0.0f, 2.0f, 5.0f }, qk::v3{}, qk::v3{ 0.0f, 1.0f, 0.0f }, 45.0f, 0.01f, 100.0f));
-        m_nodes.emplace_back(qk::Node::MakeCamera(false, qk::v3{ 0.0f, 2.0f, 5.0f }, qk::v3{}, qk::v3{ 0.0f, 1.0f, 0.0f }, 45.0f, 0.01f, 100.0f));
+        m_nodes.emplace_back(qk::DEFAULT_BACKGROUND);
+        m_nodes.emplace_back(qk::Node::MakeObject({ qk::v3{}, qk::v3{ -90.0f, 0.0f, 0.0f }, qk::v3{ 10.0f, 10.0f, 1.0f }, qk::QUAD_MESH_ID }));
+        m_nodes.emplace_back(qk::Node::MakeObject({ qk::v3{}, qk::v3{}, qk::v3{ 1.0f, 1.0f, 1.0f }, qk::CUBE_MESH_ID }));
+        m_nodes.emplace_back(qk::Node::MakeCamera({ true, qk::v3{ 0.0f, 2.0f, 5.0f }, qk::v3{}, qk::v3{ 0.0f, 1.0f, 0.0f }, 45.0f, 0.01f, 100.0f }));
+        m_nodes.emplace_back(qk::Node::MakeCamera({ false, qk::v3{ 0.0f, 2.0f, 5.0f }, qk::v3{}, qk::v3{ 0.0f, 1.0f, 0.0f }, 45.0f, 0.01f, 100.0f }));
+        m_nodes.emplace_back(qk::Node::MakeCamera({ false, qk::v3{ 0.0f, 2.0f, 5.0f }, qk::v3{}, qk::v3{ 0.0f, 1.0f, 0.0f }, 45.0f, 0.01f, 100.0f }));
     }
     void Editor::Update()
     {
@@ -85,8 +85,7 @@ namespace qk_gui
                                 bool is_selected{ node.type == type };
                                 if (ImGui::Selectable(qk::NodeTypeStr(type), is_selected))
                                 {
-                                    node = qk::Node{}; // TODO: make default node for the selected type
-                                    node.type = type;
+                                    node = qk::Node::MakeDefault(type);
                                 }
                                 if (is_selected)
                                 {
@@ -120,7 +119,7 @@ namespace qk_gui
             // render add node button
             if (ImGui::Button("Add Node"))
             {
-                m_nodes.emplace_back(qk::Node{});
+                m_nodes.emplace_back(qk::DEFAULT_BACKGROUND);
             }
         }
         ImGui::End();

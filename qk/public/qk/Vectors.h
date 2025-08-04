@@ -6,8 +6,8 @@ namespace qk
     {
         float elems[4];
 
-        v4() : elems{} {}
-        v4(float a, float b, float c, float d) : elems{ a, b, c, d } {}
+        constexpr v4() : elems{} {}
+        constexpr v4(float a, float b, float c, float d) : elems{ a, b, c, d } {}
 
         const float& x() const noexcept { return elems[0]; }
         const float& y() const noexcept { return elems[1]; }
@@ -32,8 +32,8 @@ namespace qk
     {
         float elems[3];
 
-        v3() : elems{} {}
-        v3(float a, float b, float c) : elems{ a, b, c } {}
+        constexpr v3() : elems{} {}
+        constexpr v3(float a, float b, float c) : elems{ a, b, c } {}
 
         const float& x() const noexcept { return elems[0]; }
         const float& y() const noexcept { return elems[1]; }
@@ -54,8 +54,8 @@ namespace qk
     {
         float elems[2];
 
-        v2() : elems{} {}
-        v2(float a, float b) : elems{ a, b } {}
+        constexpr v2() : elems{} {}
+        constexpr v2(float a, float b) : elems{ a, b } {}
 
         const float& x() const noexcept { return elems[0]; }
         const float& y() const noexcept { return elems[1]; }
