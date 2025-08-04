@@ -24,8 +24,7 @@ namespace qk_gui
         // if there is a node to be removed, do it
         if (m_to_be_removed_idx)
         {
-            std::swap(m_nodes[m_to_be_removed_idx.value()], m_nodes.back()); // swap the node to be removed with the last one
-            m_nodes.pop_back(); // remove the last one
+            m_nodes.erase(m_nodes.begin() + m_to_be_removed_idx.value());
             m_to_be_removed_idx = {}; // the node has been removed
         }
 
@@ -41,7 +40,7 @@ namespace qk_gui
                 {
                     camera_node = std::to_address(it);
                 }
-                else // no maincamera node found
+                else // no main camera node found
                 {
                     // search for the last camera node
                     it = std::find_if(m_nodes.rbegin(), m_nodes.rend(), [](const qk::Node& n) { return n.type == qk::NodeType::Camera; });
@@ -67,7 +66,7 @@ namespace qk_gui
     }
     void Editor::Render()
     {
-        ImGui::Begin("QkGUI");
+        ImGui::Begin("Nodes");
         {
             for (std::size_t i{}; i < m_nodes.size(); i++)
             {
@@ -75,14 +74,7 @@ namespace qk_gui
 
                 ImGui::PushID(static_cast<int>(i));
                 {
-                    std::string node_label{ qk::NodeTypeStr(node.type) };
-
-                    if (node.type == qk::NodeType::Camera && node.camera.is_main)
-                    {
-                        node_label += " (Main)";
-                    }
-
-                    if (ImGui::CollapsingHeader(node_label.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+                    if (ImGui::CollapsingHeader(qk::NodeTypeStr(node.type), ImGuiTreeNodeFlags_DefaultOpen))
                     {
                         // render node ui
                         switch (node.type)
@@ -102,6 +94,14 @@ namespace qk_gui
                 }
                 ImGui::PopID();
             }
+
+            ImGui::Separator();
+
+            // render add node button
+            if (ImGui::Button("Add Node"))
+            {
+                m_nodes.emplace_back(qk::Node{});
+            }
         }
         ImGui::End();
     }
@@ -111,6 +111,16 @@ namespace qk_gui
     }
     void Editor::RenderCameraNode(qk::Node& node)
     {
+        ImGui::Text("Main:");
+        ImGui::SameLine();
+        if (node.camera.is_main)
+        {
+            ImGui::TextColored(ImVec4{ 0.0f, 1.0f, 0.0f, 1.0f }, "Yes");
+        }
+        else
+        {
+            ImGui::TextColored(ImVec4{ 1.0f, 0.0f, 0.0f, 1.0f }, "No");
+        }
         ImGui::DragFloat3("Eye", node.camera.eye.elems);
         ImGui::DragFloat3("Target", node.camera.target.elems);
         ImGui::DragFloat3("Up", node.camera.up.elems);
