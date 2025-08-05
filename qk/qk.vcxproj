@@ -112,15 +112,14 @@
     <ClInclude Include="private\qk\PCH.h" />
     <ClInclude Include="public\qk\Crash.h" />
     <ClInclude Include="public\qk\Mesh.h" />
-    <ClInclude Include="public\qk\Node.h" />
     <ClInclude Include="public\qk\Qk.h" />
     <ClInclude Include="public\qk\Renderer.h" />
+    <ClInclude Include="public\qk\Scene.h" />
     <ClInclude Include="public\qk\Vectors.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Crash.cpp" />
     <ClCompile Include="src\D11.cpp" />
-    <ClCompile Include="src\Node.cpp" />
     <ClCompile Include="src\PCH.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>

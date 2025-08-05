@@ -181,7 +181,7 @@ namespace qk
         OpaquePass& operator=(const OpaquePass&) = delete;
         OpaquePass& operator=(OpaquePass&&) noexcept = delete;
     public:
-        void Render(int w, int h, ID3D11RenderTargetView* rtv, std::span<const Node> nodes);
+        void Render(int w, int h, ID3D11RenderTargetView* rtv, const Scene& scene);
     private:
         ID3D11Device* m_dev;
         ID3D11DeviceContext* m_ctx;
@@ -263,7 +263,7 @@ namespace qk
             qk_CheckHR(m_dev->CreateBuffer(&desc, nullptr, m_cb_object.ReleaseAndGetAddressOf()));
         }
     }
-    void OpaquePass::Render(int w, int h, ID3D11RenderTargetView* rtv, std::span<const Node> nodes)
+    void OpaquePass::Render(int w, int h, ID3D11RenderTargetView* rtv, const Scene& scene)
     {
         // set new viewport data
         m_viewport.Width = static_cast<float>(w);
@@ -285,19 +285,12 @@ namespace qk
             m_ctx->OMSetRenderTargets(1, &rtv, nullptr);
         }
 
-        // find the main camera, build its view and projection matrices, and upload them to the GPU
+        // build camera view and projection matriaces, then upload them to the GPU
         {
-            Matrix view{}, projection{};
-            
-            // we take as main camera the last main camera in the list
-            auto it{ std::find_if(nodes.rbegin(), nodes.rend(), [](const Node& n) { return n.type == NodeType::Camera && n.camera.is_main; }) };
-            if (it != nodes.rend()) // main camera found
-            {
-                float aspect{ m_viewport.Width / m_viewport.Height };
-                float fov_rad{ DirectX::XMConvertToRadians(it->camera.fov_deg) };
-                view = Matrix::CreateLookAt(Vector3{ it->camera.eye.elems }, Vector3{ it->camera.target.elems }, { 0.0f, 1.0f, 0.0f });
-                projection = Matrix::CreatePerspectiveFieldOfView(fov_rad, aspect, it->camera.near_plane, it->camera.far_plane);
-            }
+            float aspect{ m_viewport.Width / m_viewport.Height };
+            float fov_rad{ DirectX::XMConvertToRadians(scene.camera.fov_deg) };
+            Matrix view{ Matrix::CreateLookAt(Vector3{ scene.camera.eye.elems }, Vector3{ scene.camera.target.elems }, { 0.0f, 1.0f, 0.0f }) };
+            Matrix projection{ Matrix::CreatePerspectiveFieldOfView(fov_rad, aspect, scene.camera.near_plane, scene.camera.far_plane) };
 
             d11::SubresourceMap map{ m_ctx, m_cb_scene.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
             auto constants{ static_cast<OpaquePassSceneConstants*>(map.Data()) };
@@ -306,53 +299,45 @@ namespace qk
         }
 
         // loop over each object node and render it
-        for (const Node& node : nodes)
+        for (const Object& object : scene.objects)
         {
-            if (node.type == NodeType::Object)
+            // compute object's model and normal matrices, then upload them to the GPU
             {
-                // compute object's model and normal matrices
-                Matrix model{};
-                Matrix normal{};
-                {
-                    Vector3 rotation_rad{};
-                    rotation_rad.x = DirectX::XMConvertToRadians(node.object.rotation.x());
-                    rotation_rad.y = DirectX::XMConvertToRadians(node.object.rotation.y());
-                    rotation_rad.z = DirectX::XMConvertToRadians(node.object.rotation.z());
+                Vector3 rotation_rad{};
+                rotation_rad.x = DirectX::XMConvertToRadians(object.rotation.x());
+                rotation_rad.y = DirectX::XMConvertToRadians(object.rotation.y());
+                rotation_rad.z = DirectX::XMConvertToRadians(object.rotation.z());
 
-                    Matrix translate{ Matrix::CreateTranslation(Vector3{ node.object.position.elems }) };
-                    Matrix rotate{ Matrix::CreateFromYawPitchRoll(rotation_rad) };
-                    Matrix scale{ Matrix::CreateScale(Vector3{ node.object.scaling.elems }) };
-                    model = scale * rotate * translate;
-                    normal = scale * rotate;
-                    normal.Invert();
-                    normal.Transpose();
-                }
+                Matrix translate{ Matrix::CreateTranslation(Vector3{ object.position.elems }) };
+                Matrix rotate{ Matrix::CreateFromYawPitchRoll(rotation_rad) };
+                Matrix scale{ Matrix::CreateScale(Vector3{ object.scaling.elems }) };
+                Matrix model{ scale * rotate * translate };
+                Matrix normal{ scale * rotate };
+                normal.Invert();
+                normal.Transpose();
 
-                // upload object constants
-                {
-                    d11::SubresourceMap map{ m_ctx, m_cb_object.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
-                    auto constants{ static_cast<OpaquePassObjectConstants*>(map.Data()) };
-                    constants->model = model;
-                    constants->normal = normal;
-                }
+                d11::SubresourceMap map{ m_ctx, m_cb_object.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
+                auto constants{ static_cast<OpaquePassObjectConstants*>(map.Data()) };
+                constants->model = model;
+                constants->normal = normal;
+            }
 
-                // set mesh related pipeline state and submit draw call
-                {
-                    // fetch mesh
-                    const Mesh& mesh{ m_meshes.at(static_cast<std::size_t>(node.object.mesh_id)) };
+            // set mesh related pipeline state and submit draw call
+            {
+                // fetch mesh
+                const Mesh& mesh{ m_meshes.at(static_cast<std::size_t>(object.mesh_id)) };
 
-                    // prepare data for pipeline state
-                    ID3D11Buffer* vertices{ mesh.Vertices() };
-                    UINT vertex_stride{ sizeof(MeshVertex) };
-                    UINT vertex_offset{};
+                // prepare data for pipeline state
+                ID3D11Buffer* vertices{ mesh.Vertices() };
+                UINT vertex_stride{ sizeof(MeshVertex) };
+                UINT vertex_offset{};
 
-                    // set pipeline state
-                    m_ctx->IASetIndexBuffer(mesh.Indices(), MESH_INDEX_FORMAT, 0);
-                    m_ctx->IASetVertexBuffers(0, 1, &vertices, &vertex_stride, &vertex_offset);
+                // set pipeline state
+                m_ctx->IASetIndexBuffer(mesh.Indices(), MESH_INDEX_FORMAT, 0);
+                m_ctx->IASetVertexBuffers(0, 1, &vertices, &vertex_stride, &vertex_offset);
 
-                    // draw
-                    m_ctx->DrawIndexed(mesh.IndexCount(), 0, 0);
-                }
+                // draw
+                m_ctx->DrawIndexed(mesh.IndexCount(), 0, 0);
             }
         }
     }
@@ -367,7 +352,7 @@ namespace qk
         RendererImpl& operator=(const RendererImpl&) = delete;
         RendererImpl& operator=(RendererImpl&&) noexcept = delete;
     public:
-        void Render(int w, int h, ID3D11RenderTargetView* rtv, std::span<const Node> nodes);
+        void Render(int w, int h, ID3D11RenderTargetView* rtv, const Scene& scene);
     private:
         ID3D11Device* m_dev;
         ID3D11DeviceContext* m_ctx;
@@ -395,32 +380,21 @@ namespace qk
             }
         }
     }
-    void RendererImpl::Render(int w, int h, ID3D11RenderTargetView* rtv, std::span<const Node> nodes)
+    void RendererImpl::Render(int w, int h, ID3D11RenderTargetView* rtv, const Scene& scene)
     {
-        // clear rtv
-        {
-            // if there is at least one backgorund node, find the last one and use its color as clear color, otherwise use black
-            v4 clear_color{};
-            {
-                const auto it{ std::find_if(nodes.rbegin(), nodes.rend(), [](const Node& n) { return n.type == NodeType::Background; }) };
-                if (it != nodes.rend())
-                {
-                    clear_color = it->background.color;
-                }
-            }
-            m_ctx->ClearRenderTargetView(rtv, clear_color.elems);
-        }
+        // clear rtv using the specified background
+        m_ctx->ClearRenderTargetView(rtv, scene.background.color.elems);
 
         // run render passes
-        m_opaque_pass.Render(w, h, rtv, nodes);
+        m_opaque_pass.Render(w, h, rtv, scene);
     }
 
     Renderer::Renderer(void* d3d_dev, void* d3d_ctx)
         : m_impl{ std::make_shared<RendererImpl>(static_cast<ID3D11Device*>(d3d_dev), static_cast<ID3D11DeviceContext*>(d3d_ctx)) }
     {
     }
-    void Renderer::Render(int w, int h, void* rtv, std::span<const Node> nodes)
+    void Renderer::Render(int w, int h, void* rtv, const Scene& scene)
     {
-        std::static_pointer_cast<RendererImpl>(m_impl)->Render(w, h, static_cast<ID3D11RenderTargetView*>(rtv), nodes);
+        std::static_pointer_cast<RendererImpl>(m_impl)->Render(w, h, static_cast<ID3D11RenderTargetView*>(rtv), scene);
     }
 }

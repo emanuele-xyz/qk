@@ -24,9 +24,6 @@
     <ClInclude Include="private\qk\PCH.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="public\qk\Node.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="private\qk\D11.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -42,6 +39,9 @@
     <ClInclude Include="public\qk\Mesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="public\qk\Scene.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Renderer.cpp">
@@ -51,9 +51,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Crash.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Node.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\D11.cpp">

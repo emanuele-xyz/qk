@@ -130,7 +130,7 @@ namespace qk_gui
             editor.Update(stopwatch.ElapsedSec());
 
             // render scene to the back buffer
-            renderer.Render(window_w, window_h, frame_buffer.BackBufferRTV(), editor.Nodes());
+            renderer.Render(window_w, window_h, frame_buffer.BackBufferRTV(), editor.Scene());
 
             // render editor ui
             imgui_handle.BeginFrame();

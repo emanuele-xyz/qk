@@ -3,6 +3,7 @@
 #include <qk/Qk.h>
 #include <qk_gui/Keyboard.h>
 #include <qk_gui/Mouse.h>
+#include <qk_gui/Camera.h>
 
 #include <optional>
 #include <span>
@@ -20,18 +21,14 @@ namespace qk_gui
         Editor& operator=(const Editor&) = delete;
         Editor& operator=(Editor&&) noexcept = delete;
     public:
-        std::span<const qk::Node> Nodes() const noexcept { return m_nodes; }
+        const qk::Scene& Scene() const noexcept { return m_scene; }
     public:
         void Update(float dt);
         void Render();
     private:
-        void RenderBackgroundNode(qk::Node& node);
-        void RenderCameraNode(qk::Node& node);
-        void RenderObjectNode(qk::Node& node);
-    private:
         const Keyboard& m_keyboard;
         const Mouse& m_mouse;
-        std::vector<qk::Node> m_nodes;
-        std::optional<std::size_t> m_to_be_removed_idx;
+        Camera m_camera;
+        qk::Scene m_scene;
     };
 }

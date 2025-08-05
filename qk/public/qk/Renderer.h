@@ -1,6 +1,6 @@
 #pragma once
 
-#include <qk/Node.h>
+#include <qk/Scene.h>
 
 #include <memory>
 #include <span>
@@ -17,7 +17,7 @@ namespace qk
 		Renderer& operator=(const Renderer&) = delete;
 		Renderer& operator=(Renderer&&) noexcept = delete;
 	public:
-		void Render(int w, int h, void* rtv, std::span<const Node> nodes);
+		void Render(int w, int h, void* rtv, const Scene& scene);
 	private:
 		std::shared_ptr<void> m_impl;
 	};
