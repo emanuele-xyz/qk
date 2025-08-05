@@ -37,6 +37,7 @@ namespace qk_gui
             {
                 Vector3 forward{ m_camera.Forward() };
                 Vector3 right{ m_camera.Right() };
+                Vector3 up{ m_camera.Up() };
                 if (m_keyboard.KeyState(Key::W))
                 {
                     move += forward;
@@ -52,6 +53,17 @@ namespace qk_gui
                 if (m_keyboard.KeyState(Key::A))
                 {
                     move -= right;
+                }
+                if (m_keyboard.KeyState(Key::Space))
+                {
+                    if (!m_keyboard.KeyState(Key::Ctrl))
+                    {
+                        move += up;
+                    }
+                    else
+                    {
+                        move -= up;
+                    }
                 }
                 move.Normalize();
             }

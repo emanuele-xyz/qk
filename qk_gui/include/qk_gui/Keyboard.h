@@ -11,6 +11,8 @@ namespace qk_gui
         S,
         D,
         Shift,
+        Space,
+        Ctrl,
         Count
     };
 
