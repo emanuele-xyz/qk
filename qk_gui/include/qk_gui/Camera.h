@@ -9,7 +9,7 @@ namespace qk_gui
     private:
         constexpr static float START_YAW{ -90.0f };
         constexpr static float MIN_PITCH{ -89.0f };
-        constexpr static float MAX_PITCH{ -89.0f };
+        constexpr static float MAX_PITCH{ +89.0f };
         constexpr static Vector3 UP{ 0.0f, 1.0f, 0.0f };
         constexpr static Vector3 START_POSITION{ 0.0f, 1.0f, 5.0f };
     public:

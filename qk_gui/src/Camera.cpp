@@ -19,7 +19,7 @@ namespace qk_gui
     Vector3 Camera::Right() const noexcept
     {
         Vector3 right{ Forward() };
-        right.Cross(UP);
+        right = right.Cross(UP);
         right.Normalize();
         return right;
     }

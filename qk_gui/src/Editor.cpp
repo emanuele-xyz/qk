@@ -9,7 +9,7 @@ namespace qk_gui
 {
     constexpr float CAMERA_MOVE_SPEED{ 10.0f }; // TODO: make editable
     constexpr float CAMERA_MOVE_SPEED_MULTIPLIER{ 2.0f }; // TODO: make editable
-    constexpr float CAMERA_LOOK_SPEED{ 0.25f }; // TODO: make editable
+    constexpr float CAMERA_LOOK_SPEED{ 2.0f }; // TODO: make editable
 
     Editor::Editor(const Keyboard& keyboard, const Mouse& mouse)
         : m_keyboard{ keyboard }
