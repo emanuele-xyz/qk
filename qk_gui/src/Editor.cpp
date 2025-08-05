@@ -7,8 +7,9 @@
 
 namespace qk_gui
 {
-    constexpr float CAMERA_MOVE_SPEED{ 10.0f };
-    constexpr float CAMERA_MOVE_SPEED_MULTIPLIER{ 2.0f };
+    constexpr float CAMERA_MOVE_SPEED{ 10.0f }; // TODO: make editable
+    constexpr float CAMERA_MOVE_SPEED_MULTIPLIER{ 2.0f }; // TODO: make editable
+    constexpr float CAMERA_LOOK_SPEED{ 0.25f }; // TODO: make editable
 
     Editor::Editor(const Keyboard& keyboard, const Mouse& mouse)
         : m_keyboard{ keyboard }
@@ -62,22 +63,34 @@ namespace qk_gui
             {
                 Vector3 eye{ camera_node->camera.eye.elems };
                 Vector3 target{ camera_node->camera.target.elems };
+
+                // normalize camera up
                 Vector3 up{ camera_node->camera.up.elems };
+                up.Normalize();
 
                 // compute normalized camera forward
                 Vector3 forward{ target - eye };
+                float distance_from_target{ forward.Length() };
                 forward.Normalize();
-                
-                #if 0
-                // update camera forward based on mouse input
-                if (m_mouse.CursorDX() || m_mouse.CursorDY())
+
+                // update camera up and forward based on mouse input
+                if (m_mouse.ButtonState(Button::Left) && (m_mouse.CursorDX() != 0.0f || m_mouse.CursorDY() != 0.0f))
                 {
-                    float yaw{ std::atan2(forward.x, forward.z) };
-                    float pitch{ std::atan2(-forward.y, std::sqrt(forward.x * forward.x + forward.z * forward.z)) };
-                
-                    
+                    float yaw{ -m_mouse.CursorDX() * CAMERA_LOOK_SPEED * dt }; // rotation around y axis
+                    float pitch{ m_mouse.CursorDY() * CAMERA_LOOK_SPEED * dt }; // rotation around x axis
+                    Matrix rotation{ Matrix::CreateFromYawPitchRoll(yaw, pitch, 0.0f)};
+
+                    // rotate up vector
+                    up = Vector3::Transform(up, rotation);
+                    up.Normalize();
+
+                    // rotate forward vector
+                    forward = Vector3::Transform(forward, rotation);
+                    forward.Normalize();
+
+                    // compute new target
+                    target = eye + forward * distance_from_target;
                 }
-                #endif
 
                 // compute normalized camera right
                 Vector3 right{ forward };
@@ -102,15 +115,6 @@ namespace qk_gui
                 {
                     move -= right;
                 }
-                if (m_mouse.CursorDX())
-                {
-                    move += Vector3{ static_cast<float>(m_mouse.CursorDX()), 0.0f, 0.0f };
-                }
-                if (m_mouse.CursorDY())
-                {
-                    move += Vector3{ 0.0f, static_cast<float>(m_mouse.CursorDY()), 0.0f };
-                }
-
                 move.Normalize();
 
                 // compute speed
@@ -124,9 +128,10 @@ namespace qk_gui
                 eye += move * speed * dt;
                 target += move * speed * dt;
 
-                // write new camera position and target back into the node
+                // write new camera position, target and up back into the node
                 camera_node->camera.eye = qk::v3{ eye.x, eye.y, eye.z };
                 camera_node->camera.target = qk::v3{ target.x, target.y, target.z };
+                camera_node->camera.up = qk::v3{ up.x, up.y, up.z };
             }
         }
     }
