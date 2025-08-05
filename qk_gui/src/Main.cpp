@@ -4,6 +4,7 @@
 #include <qk_gui/D11.h>
 #include <qk_gui/ImGuiHandle.h>
 #include <qk_gui/Keyboard.h>
+#include <qk_gui/Mouse.h>
 #include <qk_gui/Editor.h>
 #include <qk_gui/Stopwatch.h>
 
@@ -89,7 +90,8 @@ namespace qk_gui
         ImGuiHandle imgui_handle{ window.Handle(), d3d_dev.Get(), d3d_ctx.Get() };
         qk::Renderer renderer{ d3d_dev.Get(), d3d_ctx.Get() };
         Keyboard keyboard{};
-        Editor editor{ keyboard };
+        Mouse mouse{};
+        Editor editor{ keyboard, mouse };
         Stopwatch stopwatch{};
 
         while (app_context.is_running)
@@ -120,7 +122,9 @@ namespace qk_gui
                 app_context.did_resize = false;
             }
 
+            // update input state
             keyboard.Update();
+            mouse.Update(window.Handle());
 
             // update editor state
             editor.Update(stopwatch.ElapsedSec());

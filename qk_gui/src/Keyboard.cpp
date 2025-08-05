@@ -30,10 +30,10 @@ namespace qk_gui
         // copy current state into previous
         m_previous = m_current;
 
-        // zero out current state
+        // clear current state
         m_current = {};
 
-        // fetch current keyboard state
+        // fetch current state
         for (int i{}; i < static_cast<int>(Key::Count); i++)
         {
             SHORT state{ GetKeyState(GetKeyCode(static_cast<Key>(i))) };

@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <chrono>
 #include <format>
 #include <iomanip>

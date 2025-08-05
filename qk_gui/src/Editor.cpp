@@ -10,8 +10,9 @@ namespace qk_gui
     constexpr float CAMERA_MOVE_SPEED{ 10.0f };
     constexpr float CAMERA_MOVE_SPEED_MULTIPLIER{ 2.0f };
 
-    Editor::Editor(const Keyboard& keyboard)
+    Editor::Editor(const Keyboard& keyboard, const Mouse& mouse)
         : m_keyboard{ keyboard }
+        , m_mouse{ mouse }
         , m_nodes{}
         , m_to_be_removed_idx{}
     {
@@ -63,10 +64,25 @@ namespace qk_gui
                 Vector3 target{ camera_node->camera.target.elems };
                 Vector3 up{ camera_node->camera.up.elems };
 
-                // compute camera forward and camera right
+                // compute normalized camera forward
                 Vector3 forward{ target - eye };
+                forward.Normalize();
+                
+                #if 0
+                // update camera forward based on mouse input
+                if (m_mouse.CursorDX() || m_mouse.CursorDY())
+                {
+                    float yaw{ std::atan2(forward.x, forward.z) };
+                    float pitch{ std::atan2(-forward.y, std::sqrt(forward.x * forward.x + forward.z * forward.z)) };
+                
+                    
+                }
+                #endif
+
+                // compute normalized camera right
                 Vector3 right{ forward };
                 right = right.Cross(up);
+                right.Normalize();
 
                 // compute move vector based on keyboard input
                 Vector3 move{};
@@ -86,6 +102,15 @@ namespace qk_gui
                 {
                     move -= right;
                 }
+                if (m_mouse.CursorDX())
+                {
+                    move += Vector3{ static_cast<float>(m_mouse.CursorDX()), 0.0f, 0.0f };
+                }
+                if (m_mouse.CursorDY())
+                {
+                    move += Vector3{ 0.0f, static_cast<float>(m_mouse.CursorDY()), 0.0f };
+                }
+
                 move.Normalize();
 
                 // compute speed

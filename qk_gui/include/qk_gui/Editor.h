@@ -2,6 +2,7 @@
 
 #include <qk/Qk.h>
 #include <qk_gui/Keyboard.h>
+#include <qk_gui/Mouse.h>
 
 #include <optional>
 #include <span>
@@ -12,7 +13,7 @@ namespace qk_gui
     class Editor
     {
     public:
-        Editor(const Keyboard& keyboard);
+        Editor(const Keyboard& keyboard, const Mouse& mouse);
         ~Editor() = default;
         Editor(const Editor&) = delete;
         Editor(Editor&&) noexcept = delete;
@@ -29,6 +30,7 @@ namespace qk_gui
         void RenderObjectNode(qk::Node& node);
     private:
         const Keyboard& m_keyboard;
+        const Mouse& m_mouse;
         std::vector<qk::Node> m_nodes;
         std::optional<std::size_t> m_to_be_removed_idx;
     };

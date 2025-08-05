@@ -16,6 +16,7 @@
     <ClCompile Include="src\ImGuiHandle.cpp" />
     <ClCompile Include="src\Keyboard.cpp" />
     <ClCompile Include="src\Main.cpp" />
+    <ClCompile Include="src\Mouse.cpp" />
     <ClCompile Include="src\PCH.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
@@ -30,6 +31,7 @@
     <ClInclude Include="include\qk_gui\ImGuiHandle.h" />
     <ClInclude Include="include\qk_gui\Keyboard.h" />
     <ClInclude Include="include\qk_gui\Math.h" />
+    <ClInclude Include="include\qk_gui\Mouse.h" />
     <ClInclude Include="include\qk_gui\PCH.h" />
     <ClInclude Include="include\qk_gui\Commons.h" />
     <ClInclude Include="include\qk_gui\Stopwatch.h" />
