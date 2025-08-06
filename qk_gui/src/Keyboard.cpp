@@ -3,6 +3,8 @@
 #include <qk_gui/Commons.h>
 #include <qk_gui/W32.h>
 
+#include <imgui.h>
+
 namespace qk_gui
 {
     static int GetKeyCode(Key key)
@@ -35,11 +37,14 @@ namespace qk_gui
         // clear current state
         m_current = {};
 
-        // fetch current state
-        for (int i{}; i < static_cast<int>(Key::Count); i++)
+        if (!ImGui::GetIO().WantCaptureKeyboard) // imgui is not capturing the keyboard
         {
-            SHORT state{ GetKeyState(GetKeyCode(static_cast<Key>(i))) };
-            m_current[i] = (state & 0x8000); // high order bit is 1 iff the key is down
+            // fetch current state
+            for (int i{}; i < static_cast<int>(Key::Count); i++)
+            {
+                SHORT state{ GetKeyState(GetKeyCode(static_cast<Key>(i))) };
+                m_current[i] = (state & 0x8000); // high order bit is 1 iff the key is down
+            }
         }
     }
 }

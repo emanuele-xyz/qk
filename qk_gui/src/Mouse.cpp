@@ -2,6 +2,8 @@
 #include <qk_gui/Mouse.h>
 #include <qk_gui/W32.h>
 
+#include <imgui.h>
+
 namespace qk_gui
 {
     static int GetKeyCode(Button button)
@@ -29,22 +31,25 @@ namespace qk_gui
         // clear current state
         m_current = {};
 
-        // fetch current state
+        if (!ImGui::GetIO().WantCaptureMouse) // imgui is not capturing the mouse
         {
-            // fetch buttons
-            for (int i{}; i < static_cast<int>(Button::Count); i++)
+            // fetch current state
             {
-                SHORT state{ GetKeyState(GetKeyCode(static_cast<Button>(i))) };
-                m_current.buttons[i] = (state & 0x8000); // high order bit is 1 iff the key is down
-            }
+                // fetch buttons
+                for (int i{}; i < static_cast<int>(Button::Count); i++)
+                {
+                    SHORT state{ GetKeyState(GetKeyCode(static_cast<Button>(i))) };
+                    m_current.buttons[i] = (state & 0x8000); // high order bit is 1 iff the key is down
+                }
 
-            // fetch cursor client position
-            {
-                POINT position{};
-                qk_gui_Check(GetCursorPos(&position));
-                qk_gui_Check(ScreenToClient(static_cast<HWND>(hwnd), &position));
-                m_current.x = position.x;
-                m_current.y = position.y;
+                // fetch cursor client position
+                {
+                    POINT position{};
+                    qk_gui_Check(GetCursorPos(&position));
+                    qk_gui_Check(ScreenToClient(static_cast<HWND>(hwnd), &position));
+                    m_current.x = position.x;
+                    m_current.y = position.y;
+                }
             }
         }
     }
