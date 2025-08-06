@@ -193,6 +193,8 @@ namespace qk
         wrl::ComPtr<ID3D11RasterizerState> m_rs;
         wrl::ComPtr<ID3D11Buffer> m_cb_scene;
         wrl::ComPtr<ID3D11Buffer> m_cb_object;
+        wrl::ComPtr<ID3D11Texture2D> m_depth_stencil_buffer;
+        wrl::ComPtr<ID3D11DepthStencilView> m_dsv;
     };
     OpaquePass::OpaquePass(ID3D11Device* dev, ID3D11DeviceContext* ctx, const std::vector<Mesh>& meshes)
         : m_dev{ dev }
@@ -205,6 +207,8 @@ namespace qk
         , m_rs{}
         , m_cb_scene{}
         , m_cb_object{}
+        , m_depth_stencil_buffer{}
+        , m_dsv{}
     {
         // vertex shader
         qk_CheckHR(m_dev->CreateVertexShader(OpaquePassVS_bytes, sizeof(OpaquePassVS_bytes), nullptr, m_vs.ReleaseAndGetAddressOf()));
@@ -265,6 +269,40 @@ namespace qk
     }
     void OpaquePass::Render(int w, int h, ID3D11RenderTargetView* rtv, const Scene& scene)
     {
+        // resize depth buffer if w or h changed
+        {
+            D3D11_TEXTURE2D_DESC desc{};
+            desc.Width = 0;
+            desc.Height = 0;
+            desc.MipLevels = 1;
+            desc.ArraySize = 1;
+            desc.Format = DXGI_FORMAT_D32_FLOAT;
+            desc.SampleDesc = { .Count = 1, .Quality = 0 };
+            desc.Usage = D3D11_USAGE_DEFAULT;
+            desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+            desc.CPUAccessFlags = 0;
+            desc.MiscFlags = 0;
+
+            if (m_depth_stencil_buffer)
+            {
+                m_depth_stencil_buffer->GetDesc(&desc);
+            }
+
+            if (desc.Width != static_cast<UINT>(w) || desc.Height != static_cast<UINT>(h))
+            {
+                desc.Width = static_cast<UINT>(w);
+                desc.Height = static_cast<UINT>(h);
+
+                // depth stencil buffer
+                qk_CheckHR(m_dev->CreateTexture2D(&desc, nullptr, m_depth_stencil_buffer.ReleaseAndGetAddressOf()));
+                // depth stencil view
+                qk_CheckHR(m_dev->CreateDepthStencilView(m_depth_stencil_buffer.Get(), nullptr, m_dsv.ReleaseAndGetAddressOf()));
+            }
+        }
+
+        // clear dsv
+        m_ctx->ClearDepthStencilView(m_dsv.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+
         // set new viewport data
         m_viewport.Width = static_cast<float>(w);
         m_viewport.Height = static_cast<float>(h);
@@ -282,7 +320,7 @@ namespace qk
             m_ctx->PSSetConstantBuffers(0, std::size(cbufs), cbufs);
             m_ctx->RSSetState(m_rs.Get());
             m_ctx->RSSetViewports(1, &m_viewport);
-            m_ctx->OMSetRenderTargets(1, &rtv, nullptr);
+            m_ctx->OMSetRenderTargets(1, &rtv, m_dsv.Get());
         }
 
         // build camera view and projection matriaces, then upload them to the GPU
