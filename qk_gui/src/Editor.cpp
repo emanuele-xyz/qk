@@ -109,7 +109,7 @@ namespace qk_gui
                         {
                             std::string label{ std::format("Object {}", i) };
                             ImGuiTreeNodeFlags tree_node_flags{ ImGuiTreeNodeFlags_DefaultOpen };
-                            if (ImGui::CollapsingHeader(std::format("{}", i).c_str(), tree_node_flags))
+                            if (ImGui::CollapsingHeader(label.c_str(), tree_node_flags))
                             {
                                 ImGui::DragFloat3("Position", m_scene.objects[i].position.elems, 0.1f);
                                 ImGui::DragFloat3("Rotation", m_scene.objects[i].rotation.elems, 0.1f);
