@@ -19,7 +19,7 @@ namespace qk_gui
     {
         // TODO: to be removed
         m_scene.objects.emplace_back(qk::Object{ qk::v3{}, qk::v3{ -90.0f, 0.0f, 0.0f }, qk::v3{ 10.0f, 10.0f, 1.0f }, qk::QUAD_MESH_ID });
-        m_scene.objects.emplace_back(qk::Object{ qk::v3{}, qk::v3{}, qk::v3{ 1.0f, 1.0f, 1.0f }, qk::CUBE_MESH_ID });
+        m_scene.objects.emplace_back(qk::Object{ qk::v3{ 0.0f, 0.5f, 0.0f }, qk::v3{}, qk::v3{ 1.0f, 1.0f, 1.0f }, qk::CUBE_MESH_ID });
     }
     void Editor::Update(float dt)
     {
