@@ -580,18 +580,18 @@ namespace qk
         {
             {
                 size_t idx{ m_textures.size() };
-                m_textures.emplace_back(Texture::AlbedoWhite(m_dev));
-                qk_Check(TextureID{ idx } == qk::WHITE_TEXTURE_ID); // check that the texture index matches its predefined id
+                m_textures.emplace_back(Texture::AlbedoBlack(m_dev));
+                qk_Check(TextureID{ idx } == qk::ALBEDO_BLACK_TEXTURE_ID); // check that the texture index matches its predefined id
             }
             {
                 size_t idx{ m_textures.size() };
-                m_textures.emplace_back(Texture::AlbedoBlack(m_dev));
-                qk_Check(TextureID{ idx } == qk::BLACK_TEXTURE_ID); // check that the texture index matches its predefined id
+                m_textures.emplace_back(Texture::AlbedoWhite(m_dev));
+                qk_Check(TextureID{ idx } == qk::ALBEDO_WHITE_TEXTURE_ID); // check that the texture index matches its predefined id
             }
             {
                 size_t idx{ m_textures.size() };
                 m_textures.emplace_back(Texture::AlbedoPink(m_dev));
-                qk_Check(TextureID{ idx } == qk::PINK_TEXTURE_ID); // check that the texture index matches its predefined id
+                qk_Check(TextureID{ idx } == qk::ALBEDO_PINK_TEXTURE_ID); // check that the texture index matches its predefined id
             }
         }
     }
