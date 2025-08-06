@@ -176,6 +176,7 @@ namespace qk
     {
     public:
         static Texture Black(ID3D11Device* dev);
+        static Texture White(ID3D11Device* dev);
     public:
         Texture(ID3D11Device* dev, int w, int h, int channels, const void* data);
         ~Texture() = default;
@@ -192,10 +193,26 @@ namespace qk
     Texture Texture::Black(ID3D11Device* dev)
     {
         constexpr int DIMENSION{ 256 };
-        constexpr int CHANNELS{ 1 };
+        constexpr int CHANNELS{ 4 };
         auto pixels{ std::make_unique<std::uint8_t[]>(DIMENSION * DIMENSION * CHANNELS) };
 
-        std::memset(pixels.get(), 0, DIMENSION * DIMENSION * CHANNELS);
+        for (int i{}; i < DIMENSION * DIMENSION * CHANNELS; i++)
+        {
+            pixels[i] = ((i % 4) == 0) ? 1 : 0;
+        }
+
+        return Texture{ dev, DIMENSION, DIMENSION, CHANNELS, pixels.get() };
+    }
+    Texture Texture::White(ID3D11Device* dev)
+    {
+        constexpr int DIMENSION{ 256 };
+        constexpr int CHANNELS{ 4 };
+        auto pixels{ std::make_unique<std::uint8_t[]>(DIMENSION * DIMENSION * CHANNELS) };
+
+        for (int i{}; i < DIMENSION * DIMENSION * CHANNELS; i++)
+        {
+            pixels[i] = std::numeric_limits<std::uint8_t>::max();
+        }
 
         return Texture{ dev, DIMENSION, DIMENSION, CHANNELS, pixels.get() };
     }
@@ -509,6 +526,11 @@ namespace qk
         }
         // upload ddefault textures
         {
+            {
+                size_t idx{ m_textures.size() };
+                m_textures.emplace_back(Texture::White(m_dev));
+                qk_Check(TextureID{ idx } == qk::WHITE_TEXTURE_ID); // check that the texture index matches its predefined id
+            }
             {
                 size_t idx{ m_textures.size() };
                 m_textures.emplace_back(Texture::Black(m_dev));

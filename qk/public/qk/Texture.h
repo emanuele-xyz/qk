@@ -17,5 +17,6 @@ namespace qk
         std::size_t m_id;
     };
 
-    constexpr TextureID BLACK_TEXTURE_ID{ 0 };
+    constexpr TextureID WHITE_TEXTURE_ID{ 0 };
+    constexpr TextureID BLACK_TEXTURE_ID{ 1 };
 }

@@ -29,7 +29,7 @@ namespace qk
         v3 rotation{};
         v3 scaling{ 1.0f, 1.0f, 1.0f };
         MeshID mesh_id{ CUBE_MESH_ID };
-        TextureID albedo_id{ BLACK_TEXTURE_ID };
+        TextureID albedo_id{ WHITE_TEXTURE_ID };
     };
 
     struct Scene

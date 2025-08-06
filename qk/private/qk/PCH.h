@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstring>
 #include <format>
+#include <limits>
 #include <memory>
 #include <span>
 #include <stacktrace>

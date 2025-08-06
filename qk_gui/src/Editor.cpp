@@ -18,8 +18,8 @@ namespace qk_gui
         , m_scene{}
     {
         // TODO: to be removed
-        m_scene.objects.emplace_back(qk::Object{ qk::v3{}, qk::v3{ -90.0f, 0.0f, 0.0f }, qk::v3{ 10.0f, 10.0f, 1.0f }, qk::QUAD_MESH_ID });
-        m_scene.objects.emplace_back(qk::Object{ qk::v3{ 0.0f, 0.5f, 0.0f }, qk::v3{}, qk::v3{ 1.0f, 1.0f, 1.0f }, qk::CUBE_MESH_ID });
+        m_scene.objects.emplace_back(qk::Object{ qk::v3{}, qk::v3{ -90.0f, 0.0f, 0.0f }, qk::v3{ 10.0f, 10.0f, 1.0f }, qk::QUAD_MESH_ID, qk::BLACK_TEXTURE_ID });
+        m_scene.objects.emplace_back(qk::Object{ qk::v3{ 0.0f, 0.5f, 0.0f }, qk::v3{}, qk::v3{ 1.0f, 1.0f, 1.0f }, qk::CUBE_MESH_ID, qk::WHITE_TEXTURE_ID });
     }
     void Editor::Update(float dt)
     {
@@ -114,6 +114,8 @@ namespace qk_gui
                                 ImGui::DragFloat3("Position", m_scene.objects[i].position.elems, 0.1f);
                                 ImGui::DragFloat3("Rotation", m_scene.objects[i].rotation.elems, 0.1f);
                                 ImGui::DragFloat3("Scaling", m_scene.objects[i].scaling.elems, 0.1f);
+                                ImGui::Text("Mesh ID: %d", m_scene.objects[i].mesh_id);
+                                ImGui::Text("Albedo ID: %d", m_scene.objects[i].albedo_id);
 
                                 // TODO: use combo for mesh
                                 //const char* items[] = { "AAAA", "BBBB", "CCCC", "DDDD", "EEEE", "FFFF", "GGGG", "HHHH", "IIII", "JJJJ", "KKKK", "LLLLLLL", "MMMM", "OOOOOOO", "PPPP", "QQQQQQQQQQ", "RRR", "SSSS" };
