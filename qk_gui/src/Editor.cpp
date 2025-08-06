@@ -18,8 +18,8 @@ namespace qk_gui
         , m_scene{}
     {
         // TODO: to be removed
-        m_scene.objects.emplace_back(qk::Object{ qk::v3{}, qk::v3{ -90.0f, 0.0f, 0.0f }, qk::v3{ 10.0f, 10.0f, 1.0f }, qk::QUAD_MESH_ID, qk::ALBEDO_BLACK_TEXTURE_ID });
-        m_scene.objects.emplace_back(qk::Object{ qk::v3{ 0.0f, 0.5f, 0.0f }, qk::v3{}, qk::v3{ 1.0f, 1.0f, 1.0f }, qk::CUBE_MESH_ID, qk::ALBEDO_PINK_TEXTURE_ID });
+        m_scene.objects.emplace_back(qk::Object{ qk::v3{}, qk::v3{ -90.0f, 0.0f, 0.0f }, qk::v3{ 10.0f, 10.0f, 1.0f }, qk::QUAD_MESH_ID, qk::ALBEDO_CHECKER_TEXTURE });
+        m_scene.objects.emplace_back(qk::Object{ qk::v3{ 0.0f, 0.5f, 0.0f }, qk::v3{}, qk::v3{ 1.0f, 1.0f, 1.0f }, qk::CUBE_MESH_ID, qk::ALBEDO_CHECKER_TEXTURE });
     }
     void Editor::Update(float dt)
     {

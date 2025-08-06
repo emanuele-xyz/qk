@@ -178,8 +178,9 @@ namespace qk
         static Texture AlbedoBlack(ID3D11Device* dev);
         static Texture AlbedoWhite(ID3D11Device* dev);
         static Texture AlbedoPink(ID3D11Device* dev);
+        static Texture AlbedoChecker(ID3D11Device* dev);
     private:
-        constexpr static int ALBEDO_DIM{ 2 };
+        constexpr static int ALBEDO_DIM{ 64 };
     public:
         Texture(ID3D11Device* dev, int w, int h, int channels, const void* data);
         ~Texture() = default;
@@ -196,16 +197,16 @@ namespace qk
     Texture Texture::AlbedoBlack(ID3D11Device* dev)
     {
         constexpr int CHANNELS{ 4 };
-        int dimension{ ALBEDO_DIM };
+        constexpr int DIM{ ALBEDO_DIM };
 
         struct Pixel
         {
             std::uint8_t r, g, b, a;
         };
 
-        auto pixels{ std::make_unique<Pixel[]>(dimension * dimension) };
+        auto pixels{ std::make_unique<Pixel[]>(DIM * DIM) };
 
-        for (int i{}; i < dimension * dimension; i++)
+        for (int i{}; i < DIM * DIM; i++)
         {
             pixels[i] =
             {
@@ -216,21 +217,21 @@ namespace qk
             };
         }
 
-        return Texture{ dev, dimension, dimension, CHANNELS, pixels.get() };
+        return Texture{ dev, DIM, DIM, CHANNELS, pixels.get() };
     }
     Texture Texture::AlbedoWhite(ID3D11Device* dev)
     {
         constexpr int CHANNELS{ 4 };
-        constexpr int dimension{ ALBEDO_DIM };
+        constexpr int DIM{ ALBEDO_DIM };
 
         struct Pixel
         {
             std::uint8_t r, g, b, a;
         };
 
-        auto pixels{ std::make_unique<Pixel[]>(dimension * dimension) };
+        auto pixels{ std::make_unique<Pixel[]>(DIM * DIM) };
 
-        for (int i{}; i < dimension * dimension; i++)
+        for (int i{}; i < DIM * DIM; i++)
         {
             pixels[i] =
             {
@@ -241,21 +242,21 @@ namespace qk
             };
         }
 
-        return Texture{ dev, dimension, dimension, CHANNELS, pixels.get() };
+        return Texture{ dev, DIM, DIM, CHANNELS, pixels.get() };
     }
     Texture Texture::AlbedoPink(ID3D11Device* dev)
     {
         constexpr int CHANNELS{ 4 };
-        constexpr int dimension{ ALBEDO_DIM };
+        constexpr int DIM{ ALBEDO_DIM };
 
         struct Pixel
         {
             std::uint8_t r, g, b, a;
         };
 
-        auto pixels{ std::make_unique<Pixel[]>(dimension * dimension) };
+        auto pixels{ std::make_unique<Pixel[]>(DIM * DIM) };
 
-        for (int i{}; i < dimension * dimension; i++)
+        for (int i{}; i < DIM * DIM; i++)
         {
             pixels[i] =
             {
@@ -266,7 +267,52 @@ namespace qk
             };
         }
 
-        return Texture{ dev, dimension, dimension, CHANNELS, pixels.get() };
+        return Texture{ dev, DIM, DIM, CHANNELS, pixels.get() };
+    }
+    Texture Texture::AlbedoChecker(ID3D11Device* dev)
+    {
+        constexpr int CHANNELS{ 4 };
+        constexpr int DIM{ ALBEDO_DIM };
+        constexpr int HALF_DIM{ DIM / 2 };
+
+        struct Pixel
+        {
+            std::uint8_t r, g, b, a;
+        };
+
+        auto pixels{ std::make_unique<Pixel[]>(DIM * DIM) };
+
+        for (int row{}; row < DIM; row++)
+        {
+            for (int col{}; col < DIM; col++)
+            {
+                bool is_less_half_on_row{ row < HALF_DIM };
+                bool is_less_half_on_col{ col < HALF_DIM };
+                int idx{ row * DIM + col };
+                if (is_less_half_on_row != is_less_half_on_col) // logical xor
+                {
+                    pixels[idx] =
+                    {
+                        .r = 0,
+                        .g = 0,
+                        .b = 0,
+                        .a = std::numeric_limits<std::uint8_t>::max(),
+                    };
+                }
+                else
+                {
+                    pixels[idx] =
+                    {
+                        .r = std::numeric_limits<std::uint8_t>::max(),
+                        .g = std::numeric_limits<std::uint8_t>::max(),
+                        .b = std::numeric_limits<std::uint8_t>::max(),
+                        .a = std::numeric_limits<std::uint8_t>::max(),
+                    };
+                }
+            }
+        }
+
+        return Texture{ dev, DIM, DIM, CHANNELS, pixels.get() };
     }
     Texture::Texture(ID3D11Device* dev, int w, int h, int channels, const void* data)
         : m_texture{}
@@ -592,6 +638,11 @@ namespace qk
                 size_t idx{ m_textures.size() };
                 m_textures.emplace_back(Texture::AlbedoPink(m_dev));
                 qk_Check(TextureID{ idx } == qk::ALBEDO_PINK_TEXTURE_ID); // check that the texture index matches its predefined id
+            }
+            {
+                size_t idx{ m_textures.size() };
+                m_textures.emplace_back(Texture::AlbedoChecker(m_dev));
+                qk_Check(TextureID{ idx } == qk::ALBEDO_CHECKER_TEXTURE); // check that the texture index matches its predefined id
             }
         }
     }

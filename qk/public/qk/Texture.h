@@ -20,4 +20,5 @@ namespace qk
     constexpr TextureID ALBEDO_BLACK_TEXTURE_ID{ 0 };
     constexpr TextureID ALBEDO_WHITE_TEXTURE_ID{ 1 };
     constexpr TextureID ALBEDO_PINK_TEXTURE_ID{ 2 };
+    constexpr TextureID ALBEDO_CHECKER_TEXTURE{ 3 };
 }
