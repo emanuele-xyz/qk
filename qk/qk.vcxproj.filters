@@ -42,6 +42,9 @@
     <ClInclude Include="public\qk\Scene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="public\qk\Texture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Renderer.cpp">

@@ -1,6 +1,7 @@
 #include <qk/PCH.h>
 #include <qk/Renderer.h>
 #include <qk/Mesh.h>
+#include <qk/Texture.h>
 #include <qk/D11.h>
 
 #include <SimpleMath.h>
@@ -171,10 +172,68 @@ namespace qk
         }
     }
 
+    class Texture
+    {
+    public:
+        static Texture Black(ID3D11Device* dev);
+    public:
+        Texture(ID3D11Device* dev, int w, int h, int channels, const void* data);
+        ~Texture() = default;
+        Texture(const Texture&) = delete;
+        Texture(Texture&&) noexcept = default;
+        Texture& operator=(const Texture&) = delete;
+        Texture& operator=(Texture&&) noexcept = default;
+    public:
+        ID3D11ShaderResourceView* SRV() const noexcept { return m_srv.Get(); }
+    private:
+        wrl::ComPtr<ID3D11Texture2D> m_texture;
+        wrl::ComPtr<ID3D11ShaderResourceView> m_srv;
+    };
+    Texture Texture::Black(ID3D11Device* dev)
+    {
+        constexpr int DIMENSION{ 256 };
+        constexpr int CHANNELS{ 1 };
+        auto pixels{ std::make_unique<std::uint8_t[]>(DIMENSION * DIMENSION * CHANNELS) };
+
+        std::memset(pixels.get(), 0, DIMENSION * DIMENSION * CHANNELS);
+
+        return Texture{ dev, DIMENSION, DIMENSION, CHANNELS, pixels.get() };
+    }
+    Texture::Texture(ID3D11Device* dev, int w, int h, int channels, const void* data)
+        : m_texture{}
+        , m_srv{}
+    {
+        DXGI_FORMAT format{};
+        switch (channels)
+        {
+        case 1: { format = DXGI_FORMAT_R8_UNORM; } break;
+        case 2: { format = DXGI_FORMAT_R8G8_UNORM; } break;
+        case 4: { format = DXGI_FORMAT_R8G8B8A8_UNORM; } break;
+        default: { qk_Unreachable(); } break;
+        }
+
+        D3D11_TEXTURE2D_DESC desc{};
+        desc.Width = static_cast<UINT>(w);
+        desc.Height = static_cast<UINT>(h);
+        desc.MipLevels = 1; // TODO: generate mip chain
+        desc.ArraySize = 1;
+        desc.Format = format;
+        desc.SampleDesc = { .Count = 1, .Quality = 0 };
+        desc.Usage = D3D11_USAGE_IMMUTABLE;
+        desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+        desc.CPUAccessFlags = 0;
+        desc.MiscFlags = 0;
+        D3D11_SUBRESOURCE_DATA initial_data{};
+        initial_data.pSysMem = data;
+        initial_data.SysMemPitch = w * channels;
+        qk_CheckHR(dev->CreateTexture2D(&desc, &initial_data, m_texture.ReleaseAndGetAddressOf()));
+        qk_CheckHR(dev->CreateShaderResourceView(m_texture.Get(), nullptr, m_srv.ReleaseAndGetAddressOf()));
+    }
+
     class OpaquePass
     {
     public:
-        OpaquePass(ID3D11Device* dev, ID3D11DeviceContext* ctx, const std::vector<Mesh>& meshes);
+        OpaquePass(ID3D11Device* dev, ID3D11DeviceContext* ctx, const std::vector<Mesh>& meshes, const std::vector<Texture>& textures);
         ~OpaquePass() = default;
         OpaquePass(const OpaquePass&) = delete;
         OpaquePass(OpaquePass&&) noexcept = delete;
@@ -186,20 +245,23 @@ namespace qk
         ID3D11Device* m_dev;
         ID3D11DeviceContext* m_ctx;
         const std::vector<Mesh>& m_meshes;
+        const std::vector<Texture>& m_textures;
         D3D11_VIEWPORT m_viewport;
         wrl::ComPtr<ID3D11VertexShader> m_vs;
         wrl::ComPtr<ID3D11PixelShader> m_ps;
         wrl::ComPtr<ID3D11InputLayout> m_il;
         wrl::ComPtr<ID3D11RasterizerState> m_rs;
+        wrl::ComPtr<ID3D11SamplerState> m_texture_ss;
         wrl::ComPtr<ID3D11Buffer> m_cb_scene;
         wrl::ComPtr<ID3D11Buffer> m_cb_object;
         wrl::ComPtr<ID3D11Texture2D> m_depth_stencil_buffer;
         wrl::ComPtr<ID3D11DepthStencilView> m_dsv;
     };
-    OpaquePass::OpaquePass(ID3D11Device* dev, ID3D11DeviceContext* ctx, const std::vector<Mesh>& meshes)
+    OpaquePass::OpaquePass(ID3D11Device* dev, ID3D11DeviceContext* ctx, const std::vector<Mesh>& meshes, const std::vector<Texture>& textures)
         : m_dev{ dev }
         , m_ctx{ ctx }
         , m_meshes{ meshes }
+        , m_textures{ textures }
         , m_viewport{ .TopLeftX = 0.0f, .TopLeftY = 0.0f, .MinDepth = 0.0f, .MaxDepth = 1.0f }
         , m_vs{}
         , m_ps{}
@@ -241,6 +303,23 @@ namespace qk
             desc.MultisampleEnable = false;
             desc.AntialiasedLineEnable = false;
             qk_CheckHR(m_dev->CreateRasterizerState(&desc, m_rs.ReleaseAndGetAddressOf()));
+        }
+
+        // sampler state
+        {
+            D3D11_SAMPLER_DESC desc{};
+            desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+            desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+            desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+            desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+            //desc.MaxAnisotropy = ;
+            desc.BorderColor[0] = 0.0f;
+            desc.BorderColor[1] = 0.0f;
+            desc.BorderColor[2] = 0.0f;
+            desc.BorderColor[3] = 0.0f;
+            desc.MinLOD = 0;
+            desc.MaxLOD = D3D11_FLOAT32_MAX;
+            qk_CheckHR(m_dev->CreateSamplerState(&desc, m_texture_ss.ReleaseAndGetAddressOf()));
         }
 
         // scene constant buffer
@@ -365,14 +444,23 @@ namespace qk
                 // fetch mesh
                 const Mesh& mesh{ m_meshes.at(static_cast<std::size_t>(object.mesh_id)) };
 
-                // prepare data for pipeline state
+                // fetch albedo
+                const Texture& albedo{ m_textures.at(static_cast<std::size_t>(object.albedo_id)) };
+
+                // prepare mesh related data for pipeline state
                 ID3D11Buffer* vertices{ mesh.Vertices() };
                 UINT vertex_stride{ sizeof(MeshVertex) };
                 UINT vertex_offset{};
 
+                // prepare texture related data for pipeline state
+                ID3D11SamplerState* sss[]{ m_texture_ss.Get() };
+                ID3D11ShaderResourceView* srvs[]{ albedo.SRV() };
+
                 // set pipeline state
                 m_ctx->IASetIndexBuffer(mesh.Indices(), MESH_INDEX_FORMAT, 0);
                 m_ctx->IASetVertexBuffers(0, 1, &vertices, &vertex_stride, &vertex_offset);
+                m_ctx->PSSetSamplers(0, std::size(sss), sss);
+                m_ctx->PSSetShaderResources(0, std::size(srvs), srvs);
 
                 // draw
                 m_ctx->DrawIndexed(mesh.IndexCount(), 0, 0);
@@ -395,6 +483,7 @@ namespace qk
         ID3D11Device* m_dev;
         ID3D11DeviceContext* m_ctx;
         std::vector<Mesh> m_meshes;
+        std::vector<Texture> m_textures;
         OpaquePass m_opaque_pass;
     };
 
@@ -402,19 +491,28 @@ namespace qk
         : m_dev{ dev }
         , m_ctx{ ctx }
         , m_meshes{}
-        , m_opaque_pass{ m_dev, m_ctx, m_meshes }
+        , m_textures{}
+        , m_opaque_pass{ m_dev, m_ctx, m_meshes, m_textures }
     {
-        // upload cube and quad meshes
+        // upload default meshes
         {
             {
                 size_t idx{ m_meshes.size() };
                 m_meshes.emplace_back(Mesh::Cube(m_dev));
-                qk_Check(MeshID{ idx } == qk::CUBE_MESH_ID); // check that the cube mesh index matches its predefined id
+                qk_Check(MeshID{ idx } == qk::CUBE_MESH_ID); // check that the mesh index matches its predefined id
             }
             {
                 size_t idx{ m_meshes.size() };
                 m_meshes.emplace_back(Mesh::Quad(m_dev));
-                qk_Check(MeshID{ idx } == qk::QUAD_MESH_ID); // check that the cube mesh index matches its predefined id
+                qk_Check(MeshID{ idx } == qk::QUAD_MESH_ID); // check that the mesh index matches its predefined id
+            }
+        }
+        // upload ddefault textures
+        {
+            {
+                size_t idx{ m_textures.size() };
+                m_textures.emplace_back(Texture::Black(m_dev));
+                qk_Check(TextureID{ idx } == qk::BLACK_TEXTURE_ID); // check that the texture index matches its predefined id
             }
         }
     }

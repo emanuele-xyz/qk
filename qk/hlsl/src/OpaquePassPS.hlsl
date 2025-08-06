@@ -2,5 +2,6 @@
 
 float4 main(VSOutput input) : SV_TARGET
 {
-	return float4(input.uv, 0.0f, 1.0f);
+    float4 color = albedo_texture.Sample(albedo_sampler, input.uv);
+    return color;
 }

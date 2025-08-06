@@ -27,4 +27,8 @@ cbuffer CBObject : register(b1)
     OpaquePassObjectConstants cb_object;
 };
 
+SamplerState albedo_sampler : register(s0);
+
+Texture2D albedo_texture : register(t0);
+
 #endif

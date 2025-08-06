@@ -115,6 +115,7 @@
     <ClInclude Include="public\qk\Qk.h" />
     <ClInclude Include="public\qk\Renderer.h" />
     <ClInclude Include="public\qk\Scene.h" />
+    <ClInclude Include="public\qk\Texture.h" />
     <ClInclude Include="public\qk\Vectors.h" />
   </ItemGroup>
   <ItemGroup>

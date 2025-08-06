@@ -2,7 +2,6 @@
 
 #include <qk/Vectors.h>
 
-#include <cstdint>
 #include <cstddef>
 
 namespace qk

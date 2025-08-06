@@ -1,6 +1,7 @@
 #pragma once
 
 #include <qk/Mesh.h>
+#include <qk/Texture.h>
 #include <qk/Vectors.h>
 
 #include <vector>
@@ -28,6 +29,7 @@ namespace qk
         v3 rotation{};
         v3 scaling{ 1.0f, 1.0f, 1.0f };
         MeshID mesh_id{ CUBE_MESH_ID };
+        TextureID albedo_id{ BLACK_TEXTURE_ID };
     };
 
     struct Scene
