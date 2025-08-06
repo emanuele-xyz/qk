@@ -19,4 +19,5 @@ namespace qk
 
     constexpr TextureID WHITE_TEXTURE_ID{ 0 };
     constexpr TextureID BLACK_TEXTURE_ID{ 1 };
+    constexpr TextureID PINK_TEXTURE_ID{ 2 };
 }

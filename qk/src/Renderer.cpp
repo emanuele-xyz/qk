@@ -175,8 +175,11 @@ namespace qk
     class Texture
     {
     public:
-        static Texture Black(ID3D11Device* dev);
-        static Texture White(ID3D11Device* dev);
+        static Texture AlbedoBlack(ID3D11Device* dev);
+        static Texture AlbedoWhite(ID3D11Device* dev);
+        static Texture AlbedoPink(ID3D11Device* dev);
+    private:
+        constexpr static int ALBEDO_DIM{ 2 };
     public:
         Texture(ID3D11Device* dev, int w, int h, int channels, const void* data);
         ~Texture() = default;
@@ -190,31 +193,80 @@ namespace qk
         wrl::ComPtr<ID3D11Texture2D> m_texture;
         wrl::ComPtr<ID3D11ShaderResourceView> m_srv;
     };
-    Texture Texture::Black(ID3D11Device* dev)
+    Texture Texture::AlbedoBlack(ID3D11Device* dev)
     {
-        constexpr int DIMENSION{ 256 };
         constexpr int CHANNELS{ 4 };
-        auto pixels{ std::make_unique<std::uint8_t[]>(DIMENSION * DIMENSION * CHANNELS) };
+        int dimension{ ALBEDO_DIM };
 
-        for (int i{}; i < DIMENSION * DIMENSION * CHANNELS; i++)
+        struct Pixel
         {
-            pixels[i] = ((i % 4) == 0) ? 1 : 0;
+            std::uint8_t r, g, b, a;
+        };
+
+        auto pixels{ std::make_unique<Pixel[]>(dimension * dimension) };
+
+        for (int i{}; i < dimension * dimension; i++)
+        {
+            pixels[i] =
+            {
+                .r = 0,
+                .g = 0,
+                .b = 0,
+                .a = std::numeric_limits<std::uint8_t>::max(),
+            };
         }
 
-        return Texture{ dev, DIMENSION, DIMENSION, CHANNELS, pixels.get() };
+        return Texture{ dev, dimension, dimension, CHANNELS, pixels.get() };
     }
-    Texture Texture::White(ID3D11Device* dev)
+    Texture Texture::AlbedoWhite(ID3D11Device* dev)
     {
-        constexpr int DIMENSION{ 256 };
         constexpr int CHANNELS{ 4 };
-        auto pixels{ std::make_unique<std::uint8_t[]>(DIMENSION * DIMENSION * CHANNELS) };
+        constexpr int dimension{ ALBEDO_DIM };
 
-        for (int i{}; i < DIMENSION * DIMENSION * CHANNELS; i++)
+        struct Pixel
         {
-            pixels[i] = std::numeric_limits<std::uint8_t>::max();
+            std::uint8_t r, g, b, a;
+        };
+
+        auto pixels{ std::make_unique<Pixel[]>(dimension * dimension) };
+
+        for (int i{}; i < dimension * dimension; i++)
+        {
+            pixels[i] =
+            {
+                .r = std::numeric_limits<std::uint8_t>::max(),
+                .g = std::numeric_limits<std::uint8_t>::max(),
+                .b = std::numeric_limits<std::uint8_t>::max(),
+                .a = std::numeric_limits<std::uint8_t>::max(),
+            };
         }
 
-        return Texture{ dev, DIMENSION, DIMENSION, CHANNELS, pixels.get() };
+        return Texture{ dev, dimension, dimension, CHANNELS, pixels.get() };
+    }
+    Texture Texture::AlbedoPink(ID3D11Device* dev)
+    {
+        constexpr int CHANNELS{ 4 };
+        constexpr int dimension{ ALBEDO_DIM };
+
+        struct Pixel
+        {
+            std::uint8_t r, g, b, a;
+        };
+
+        auto pixels{ std::make_unique<Pixel[]>(dimension * dimension) };
+
+        for (int i{}; i < dimension * dimension; i++)
+        {
+            pixels[i] =
+            {
+                .r = std::numeric_limits<std::uint8_t>::max(),
+                .g = 0,
+                .b = std::numeric_limits<std::uint8_t>::max(),
+                .a = std::numeric_limits<std::uint8_t>::max(),
+            };
+        }
+
+        return Texture{ dev, dimension, dimension, CHANNELS, pixels.get() };
     }
     Texture::Texture(ID3D11Device* dev, int w, int h, int channels, const void* data)
         : m_texture{}
@@ -528,13 +580,18 @@ namespace qk
         {
             {
                 size_t idx{ m_textures.size() };
-                m_textures.emplace_back(Texture::White(m_dev));
+                m_textures.emplace_back(Texture::AlbedoWhite(m_dev));
                 qk_Check(TextureID{ idx } == qk::WHITE_TEXTURE_ID); // check that the texture index matches its predefined id
             }
             {
                 size_t idx{ m_textures.size() };
-                m_textures.emplace_back(Texture::Black(m_dev));
+                m_textures.emplace_back(Texture::AlbedoBlack(m_dev));
                 qk_Check(TextureID{ idx } == qk::BLACK_TEXTURE_ID); // check that the texture index matches its predefined id
+            }
+            {
+                size_t idx{ m_textures.size() };
+                m_textures.emplace_back(Texture::AlbedoPink(m_dev));
+                qk_Check(TextureID{ idx } == qk::PINK_TEXTURE_ID); // check that the texture index matches its predefined id
             }
         }
     }
