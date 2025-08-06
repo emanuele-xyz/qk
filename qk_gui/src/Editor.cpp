@@ -91,129 +91,63 @@ namespace qk_gui
     }
     void Editor::Render()
     {
-        #if 0
-        ImGui::Begin("Nodes");
+        ImGui::Begin("Scene");
         {
-            for (std::size_t i{}; i < m_nodes.size(); i++)
+            ImGuiTabBarFlags tab_bar_flags{ ImGuiTabBarFlags_None };
+            if (ImGui::BeginTabBar("SceneTabBar", tab_bar_flags))
             {
-                qk::Node& node{ m_nodes[i] };
-
-                ImGui::PushID(static_cast<int>(i));
+                if (ImGui::BeginTabItem("Background"))
                 {
-                    if (ImGui::CollapsingHeader(qk::NodeTypeStr(node.type), ImGuiTreeNodeFlags_DefaultOpen))
-                    {
-                        // render node type
-                        if (ImGui::BeginCombo("Type", qk::NodeTypeStr(node.type)))
-                        {
-                            for (int type_idx{}; type_idx < static_cast<int>(qk::NodeType::Count); type_idx++)
-                            {
-                                qk::NodeType type{ static_cast<qk::NodeType>(type_idx) };
-                                bool is_selected{ node.type == type };
-                                if (ImGui::Selectable(qk::NodeTypeStr(type), is_selected))
-                                {
-                                    node = qk::Node::MakeDefault(type);
-                                }
-                                if (is_selected)
-                                {
-                                    ImGui::SetItemDefaultFocus();
-                                }
-                            }
-                            ImGui::EndCombo();
-                        }
-
-                        // render node ui
-                        switch (node.type)
-                        {
-                        case qk::NodeType::Background: { RenderBackgroundNode(node); } break;
-                        case qk::NodeType::Camera: { RenderCameraNode(node); } break;
-                        case qk::NodeType::Object: { RenderObjectNode(node); } break;
-                        default: { qk_gui_Unreachable(); } break;
-                        }
-
-                        // render remove node button
-                        if (ImGui::Button("Remove Node"))
-                        {
-                            m_to_be_removed_idx = i;
-                        }
-                    }
+                    ImGui::ColorEdit3("Color", m_scene.background.color.elems);
+                    ImGui::EndTabItem();
                 }
-                ImGui::PopID();
-            }
+                if (ImGui::BeginTabItem("Objects"))
+                {
+                    for (std::size_t i{}; i < m_scene.objects.size(); i++)
+                    {
+                        ImGui::PushID(static_cast<int>(i));
+                        {
+                            std::string label{ std::format("Object {}", i) };
+                            ImGuiTreeNodeFlags tree_node_flags{ ImGuiTreeNodeFlags_DefaultOpen };
+                            if (ImGui::CollapsingHeader(std::format("{}", i).c_str(), tree_node_flags))
+                            {
+                                ImGui::DragFloat3("Position", m_scene.objects[i].position.elems, 0.1f);
+                                ImGui::DragFloat3("Rotation", m_scene.objects[i].rotation.elems, 0.1f);
+                                ImGui::DragFloat3("Scaling", m_scene.objects[i].scaling.elems, 0.1f);
 
-            ImGui::Separator();
-
-            // render add node button
-            if (ImGui::Button("Add Node"))
-            {
-                m_nodes.emplace_back(qk::DEFAULT_BACKGROUND);
+                                // TODO: use combo for mesh
+                                //const char* items[] = { "AAAA", "BBBB", "CCCC", "DDDD", "EEEE", "FFFF", "GGGG", "HHHH", "IIII", "JJJJ", "KKKK", "LLLLLLL", "MMMM", "OOOOOOO", "PPPP", "QQQQQQQQQQ", "RRR", "SSSS" };
+                                //static const char* current_item = NULL;
+                                //
+                                //if (ImGui::BeginCombo("##combo", current_item)) // The second parameter is the label previewed before opening the combo.
+                                //{
+                                //    for (int n = 0; n < IM_ARRAYSIZE(items); n++)
+                                //    {
+                                //        bool is_selected = (current_item == items[n]); // You can store your selection however you want, outside or inside your objects
+                                //        if (ImGui::Selectable(items[n], is_selected)
+                                //            current_item = items[n];
+                                //            if (is_selected)
+                                //                ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
+                                //    }
+                                //    ImGui::EndCombo();
+                                //}
+                            }
+                        }
+                        ImGui::PopID();
+                    }
+                    ImGui::EndTabItem();
+                }
+                ImGui::EndTabBar();
             }
         }
         ImGui::End();
-        #endif
-    }
-    #if 0
-    void Editor::RenderBackgroundNode(qk::Node& node)
-    {
-        ImGui::ColorEdit3("Color", node.background.color.elems);
-    }
-    void Editor::RenderCameraNode(qk::Node& node)
-    {
-        ImGui::Text("Main:");
-        ImGui::SameLine();
-        if (node.camera.is_main)
-        {
-            ImGui::TextColored(ImVec4{ 0.0f, 1.0f, 0.0f, 1.0f }, "Yes");
-        }
-        else
-        {
-            ImGui::TextColored(ImVec4{ 1.0f, 0.0f, 0.0f, 1.0f }, "No");
-        }
-        ImGui::DragFloat3("Eye", node.camera.eye.elems);
-        ImGui::DragFloat3("Target", node.camera.target.elems);
-        ImGui::DragFloat3("Up", node.camera.up.elems);
-        ImGui::DragFloat("FOV (degrees)", &node.camera.fov_deg);
-        ImGui::DragFloat("Near Plane", &node.camera.near_plane);
-        ImGui::DragFloat("Far Plane", &node.camera.far_plane);
-        if (!node.camera.is_main) // render make main camera button if camera is not a main camera
-        {
-            if (ImGui::Button("Make Main"))
-            {
-                // when marking a camera as main, we need to unmark all the other cameras
-                for (qk::Node& n : m_nodes)
-                {
-                    if (n.type == qk::NodeType::Camera)
-                    {
-                        n.camera.is_main = false;
-                    }
-                }
 
-                // mark this camera node as a main camera
-                node.camera.is_main = true;
-            }
+        ImGui::Begin("Camera");
+        {
+            ImGui::DragFloat("FOV (degrees)", &m_scene.camera.fov_deg, 0.1f, 0.0f, 360.0f);
+            ImGui::DragFloat("Near Plane", &m_scene.camera.near_plane, 0.1f);
+            ImGui::DragFloat("Far Plane", &m_scene.camera.far_plane, 0.1f);
         }
+        ImGui::End();
     }
-    void Editor::RenderObjectNode(qk::Node& node)
-    {
-        ImGui::DragFloat3("Position", node.object.position.elems);
-        ImGui::DragFloat3("Rotation", node.object.rotation.elems);
-        ImGui::DragFloat3("Scaling", node.object.scaling.elems);
-
-        // TODO: use combo for mesh
-        //const char* items[] = { "AAAA", "BBBB", "CCCC", "DDDD", "EEEE", "FFFF", "GGGG", "HHHH", "IIII", "JJJJ", "KKKK", "LLLLLLL", "MMMM", "OOOOOOO", "PPPP", "QQQQQQQQQQ", "RRR", "SSSS" };
-        //static const char* current_item = NULL;
-        //
-        //if (ImGui::BeginCombo("##combo", current_item)) // The second parameter is the label previewed before opening the combo.
-        //{
-        //    for (int n = 0; n < IM_ARRAYSIZE(items); n++)
-        //    {
-        //        bool is_selected = (current_item == items[n]); // You can store your selection however you want, outside or inside your objects
-        //        if (ImGui::Selectable(items[n], is_selected)
-        //            current_item = items[n];
-        //            if (is_selected)
-        //                ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
-        //    }
-        //    ImGui::EndCombo();
-        //}
-    }
-    #endif
 }
