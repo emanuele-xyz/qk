@@ -126,6 +126,13 @@ namespace qk_gui
                     ImGui::ColorEdit3("Color", m_scene.background.color.elems);
                     ImGui::EndTabItem();
                 }
+                if (ImGui::BeginTabItem("Directional Light"))
+                {
+                    ImGui::DragFloat3("Direction", m_scene.directional_light.direction.elems, 0.01f, -1.0f, +1.0f);
+                    ImGui::ColorEdit3("Color", m_scene.directional_light.color.elems);
+
+                    ImGui::EndTabItem();
+                }
                 if (ImGui::BeginTabItem("Objects"))
                 {
                     for (std::size_t i{}; i < m_scene.objects.size(); i++)

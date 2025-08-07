@@ -556,6 +556,8 @@ namespace qk
                 constants->normal = normal;
                 constants->albedo_color = Vector3{ object.albedo_color.elems };
                 constants->albedo_mix = object.albedo_mix;
+                constants->light_direction = Vector3{ scene.directional_light.direction.elems };
+                constants->light_color = Vector3{ scene.directional_light.color.elems };
             }
 
             // set mesh related pipeline state and submit draw call

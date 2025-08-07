@@ -23,6 +23,12 @@ namespace qk
         float far_plane{ 100.0f };
     };
 
+    struct DirectionalLight
+    {
+        v3 direction{ -1.0f, -1.0f, -1.0f };
+        v3 color{ 1.0f, 1.0f, 1.0f };
+    };
+
     struct Object
     {
         v3 position{};
@@ -38,6 +44,7 @@ namespace qk
     {
         Background background{};
         Camera camera{};
+        DirectionalLight directional_light{};
         std::vector<Object> objects{};
     };
 }
