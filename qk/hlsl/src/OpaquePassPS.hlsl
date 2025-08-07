@@ -7,11 +7,11 @@ float4 main(VSOutput input) : SV_TARGET
     float3 albedo = lerp(albedo_color, albedo_sample, cb_object.albedo_mix);
     
     // lighting model parameters
-    float3 l = normalize(-cb_object.light_direction); // negate the directional light direction
+    float3 l = normalize(-cb_object.directional_light.direction); // negate the directional light direction
     float3 n = normalize(input.world_normal);
     
     // Labert lighting model
-    float3 shaded = albedo * cb_object.light_color * max(dot(n, l), 0);
+    float3 shaded = albedo * cb_object.directional_light.color * max(dot(n, l), 0);
     
     return float4(shaded, 1.0);
 }
