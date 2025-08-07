@@ -11,6 +11,8 @@ struct OpaquePassObjectConstants
 {
     matrix model;
     matrix normal;
+    float3 albedo_color;
+    float albedo_mix;
 };
 
 #endif

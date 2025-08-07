@@ -28,8 +28,10 @@ namespace qk
         v3 position{};
         v3 rotation{};
         v3 scaling{ 1.0f, 1.0f, 1.0f };
-        MeshID mesh_id{ CUBE_MESH_ID };
-        TextureID albedo_id{ ALBEDO_BLACK_TEXTURE_ID };
+        MeshID mesh_id{ CUBE };
+        float albedo_mix{}; // 0 for color, 1 for texture
+        v3 albedo_color{ 1.0f, 1.0f, 1.0f };
+        TextureID albedo_id{ ALBEDO_BLACK };
     };
 
     struct Scene

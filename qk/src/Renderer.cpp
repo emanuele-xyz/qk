@@ -10,7 +10,9 @@ using Vector3 = DirectX::SimpleMath::Vector3;
 namespace dx = DirectX; // for DirectX namespace included by DirectXMath (included by SimpleMath)
 
 #define matrix Matrix
+#define float3 Vector3
 #include <qk/hlsl/OpaquePassConstants.h>
+#undef float3
 #undef matrix
 
 #include <qk/hlsl/OpaquePassVS.h>
@@ -552,6 +554,8 @@ namespace qk
                 auto constants{ static_cast<OpaquePassObjectConstants*>(map.Data()) };
                 constants->model = model;
                 constants->normal = normal;
+                constants->albedo_color = Vector3{ object.albedo_color.elems };
+                constants->albedo_mix = object.albedo_mix;
             }
 
             // set mesh related pipeline state and submit draw call
@@ -614,12 +618,12 @@ namespace qk
             {
                 size_t idx{ m_meshes.size() };
                 m_meshes.emplace_back(Mesh::Cube(m_dev));
-                qk_Check(MeshID{ idx } == qk::CUBE_MESH_ID); // check that the mesh index matches its predefined id
+                qk_Check(MeshID{ idx } == qk::CUBE); // check that the mesh index matches its predefined id
             }
             {
                 size_t idx{ m_meshes.size() };
                 m_meshes.emplace_back(Mesh::Quad(m_dev));
-                qk_Check(MeshID{ idx } == qk::QUAD_MESH_ID); // check that the mesh index matches its predefined id
+                qk_Check(MeshID{ idx } == qk::QUAD); // check that the mesh index matches its predefined id
             }
         }
         // upload ddefault textures
@@ -627,22 +631,22 @@ namespace qk
             {
                 size_t idx{ m_textures.size() };
                 m_textures.emplace_back(Texture::AlbedoBlack(m_dev));
-                qk_Check(TextureID{ idx } == qk::ALBEDO_BLACK_TEXTURE_ID); // check that the texture index matches its predefined id
+                qk_Check(TextureID{ idx } == qk::ALBEDO_BLACK); // check that the texture index matches its predefined id
             }
             {
                 size_t idx{ m_textures.size() };
                 m_textures.emplace_back(Texture::AlbedoWhite(m_dev));
-                qk_Check(TextureID{ idx } == qk::ALBEDO_WHITE_TEXTURE_ID); // check that the texture index matches its predefined id
+                qk_Check(TextureID{ idx } == qk::ALBEDO_WHITE); // check that the texture index matches its predefined id
             }
             {
                 size_t idx{ m_textures.size() };
                 m_textures.emplace_back(Texture::AlbedoPink(m_dev));
-                qk_Check(TextureID{ idx } == qk::ALBEDO_PINK_TEXTURE_ID); // check that the texture index matches its predefined id
+                qk_Check(TextureID{ idx } == qk::ALBEDO_PINK); // check that the texture index matches its predefined id
             }
             {
                 size_t idx{ m_textures.size() };
                 m_textures.emplace_back(Texture::AlbedoChecker(m_dev));
-                qk_Check(TextureID{ idx } == qk::ALBEDO_CHECKER_TEXTURE); // check that the texture index matches its predefined id
+                qk_Check(TextureID{ idx } == qk::ALBEDO_CHECKER); // check that the texture index matches its predefined id
             }
         }
     }

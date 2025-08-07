@@ -18,8 +18,33 @@ namespace qk_gui
         , m_scene{}
     {
         // TODO: to be removed
-        m_scene.objects.emplace_back(qk::Object{ qk::v3{}, qk::v3{ -90.0f, 0.0f, 0.0f }, qk::v3{ 10.0f, 10.0f, 1.0f }, qk::QUAD_MESH_ID, qk::ALBEDO_CHECKER_TEXTURE });
-        m_scene.objects.emplace_back(qk::Object{ qk::v3{ 0.0f, 0.5f, 0.0f }, qk::v3{}, qk::v3{ 1.0f, 1.0f, 1.0f }, qk::CUBE_MESH_ID, qk::ALBEDO_CHECKER_TEXTURE });
+        {
+            qk::Object object{};
+            object.position;
+            object.rotation;
+            object.scaling;
+            object.mesh_id;
+            object.albedo_mix;
+            object.albedo_color;
+            object.albedo_id;
+
+            object = qk::Object{};
+            object.rotation = qk::v3{ -90.0f, 0.0f, 0.0f };
+            object.scaling = qk::v3{ 10.0f, 10.0f, 1.0f };
+            object.mesh_id = qk::QUAD;
+            object.albedo_mix = 0.5f;
+            object.albedo_color = qk::v3{ 1.0f, 0.0f, 0.0f };
+            object.albedo_id = qk::ALBEDO_CHECKER;
+            m_scene.objects.emplace_back(object);
+
+            object = qk::Object{};
+            object.position = qk::v3{ 0.0f, 0.5f, 0.0f };
+            object.mesh_id = qk::CUBE;
+            object.albedo_mix = 0.5f;
+            object.albedo_color = qk::v3{ 0.0f, 0.0f, 1.0f };
+            object.albedo_id = qk::ALBEDO_CHECKER;
+            m_scene.objects.emplace_back(object);
+        }
     }
     void Editor::Update(float dt)
     {
@@ -105,17 +130,21 @@ namespace qk_gui
                 {
                     for (std::size_t i{}; i < m_scene.objects.size(); i++)
                     {
+                        qk::Object& object{ m_scene.objects[i] };
+
                         ImGui::PushID(static_cast<int>(i));
                         {
                             std::string label{ std::format("Object {}", i) };
                             ImGuiTreeNodeFlags tree_node_flags{ ImGuiTreeNodeFlags_DefaultOpen };
                             if (ImGui::CollapsingHeader(label.c_str(), tree_node_flags))
                             {
-                                ImGui::DragFloat3("Position", m_scene.objects[i].position.elems, 0.1f);
-                                ImGui::DragFloat3("Rotation", m_scene.objects[i].rotation.elems, 0.1f);
-                                ImGui::DragFloat3("Scaling", m_scene.objects[i].scaling.elems, 0.1f);
-                                ImGui::Text("Mesh ID: %d", m_scene.objects[i].mesh_id);
-                                ImGui::Text("Albedo ID: %d", m_scene.objects[i].albedo_id);
+                                ImGui::DragFloat3("Position", object.position.elems, 0.1f);
+                                ImGui::DragFloat3("Rotation", object.rotation.elems, 0.1f);
+                                ImGui::DragFloat3("Scaling", object.scaling.elems, 0.1f);
+                                ImGui::Text("Mesh ID: %d", object.mesh_id);
+                                ImGui::DragFloat("Albedo Mix", &object.albedo_mix, 0.001f, 0.0f, 1.0f);
+                                ImGui::ColorEdit3("Albedo Color", object.albedo_color.elems);
+                                ImGui::Text("Albedo ID: %d", object.albedo_id);
 
                                 // TODO: use combo for mesh
                                 //const char* items[] = { "AAAA", "BBBB", "CCCC", "DDDD", "EEEE", "FFFF", "GGGG", "HHHH", "IIII", "JJJJ", "KKKK", "LLLLLLL", "MMMM", "OOOOOOO", "PPPP", "QQQQQQQQQQ", "RRR", "SSSS" };

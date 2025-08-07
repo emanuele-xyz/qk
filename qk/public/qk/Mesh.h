@@ -19,8 +19,8 @@ namespace qk
         std::size_t m_id;
     };
 
-    constexpr MeshID CUBE_MESH_ID{ 0 };
-    constexpr MeshID QUAD_MESH_ID{ 1 };
+    constexpr MeshID CUBE{ 0 };
+    constexpr MeshID QUAD{ 1 };
 
     struct MeshVertex
     {
