@@ -32,7 +32,7 @@ namespace qk_gui
             object.rotation = qk::v3{ -90.0f, 0.0f, 0.0f };
             object.scaling = qk::v3{ 10.0f, 10.0f, 1.0f };
             object.mesh_id = qk::QUAD;
-            object.albedo_mix = 0.5f;
+            object.albedo_mix = 0.75f;
             object.albedo_color = qk::v3{ 1.0f, 0.0f, 0.0f };
             object.albedo_id = qk::ALBEDO_CHECKER;
             m_scene.objects.emplace_back(object);
@@ -40,7 +40,7 @@ namespace qk_gui
             object = qk::Object{};
             object.position = qk::v3{ 0.0f, 0.5f, 0.0f };
             object.mesh_id = qk::CUBE;
-            object.albedo_mix = 0.5f;
+            object.albedo_mix = 0.75f;
             object.albedo_color = qk::v3{ 0.0f, 0.0f, 1.0f };
             object.albedo_id = qk::ALBEDO_CHECKER;
             m_scene.objects.emplace_back(object);
