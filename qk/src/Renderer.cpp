@@ -18,9 +18,6 @@ namespace dx = DirectX; // for DirectX namespace included by DirectXMath (includ
 #undef matrix
 #undef int
 
-#include <qk/hlsl/OpaquePassVS.h>
-#include <qk/hlsl/OpaquePassPS.h>
-
 namespace qk
 {
     constexpr DXGI_FORMAT MESH_INDEX_FORMAT{ DXGI_FORMAT_R32_UINT };
@@ -392,6 +389,9 @@ namespace qk
         , m_sb_point_lights{}
         , m_srv_point_lights{}
     {
+        #include <qk/hlsl/OpaquePassVS.h>
+        #include <qk/hlsl/OpaquePassPS.h>
+
         // vertex shader
         qk_CheckHR(m_dev->CreateVertexShader(OpaquePassVS_bytes, sizeof(OpaquePassVS_bytes), nullptr, m_vs.ReleaseAndGetAddressOf()));
 
@@ -633,6 +633,63 @@ namespace qk
         , m_cb_scene{}
         , m_cb_object{}
     {
+        #include <qk/hlsl/GizmoPassVS.h>
+        #include <qk/hlsl/GizmoPassPS.h>
+
+        // vertex shader
+        qk_CheckHR(m_dev->CreateVertexShader(GizmoPassVS_bytes, sizeof(GizmoPassVS_bytes), nullptr, m_vs.ReleaseAndGetAddressOf()));
+
+        // pixel shader
+        qk_CheckHR(m_dev->CreatePixelShader(GizmoPassPS_bytes, sizeof(GizmoPassPS_bytes), nullptr, m_ps.ReleaseAndGetAddressOf()));
+
+        // input layout
+        {
+            D3D11_INPUT_ELEMENT_DESC desc[] =
+            {
+                { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+            };
+            qk_CheckHR(m_dev->CreateInputLayout(desc, std::size(desc), GizmoPassVS_bytes, sizeof(GizmoPassVS_bytes), m_il.ReleaseAndGetAddressOf()));
+        }
+
+        // rasterizer state
+        {
+            D3D11_RASTERIZER_DESC desc{};
+            desc.FillMode = D3D11_FILL_SOLID;
+            desc.CullMode = D3D11_CULL_BACK;
+            desc.FrontCounterClockwise = true;
+            desc.DepthBias = 0;
+            desc.DepthBiasClamp = 0.0f;
+            desc.SlopeScaledDepthBias = 0.0f;
+            desc.DepthClipEnable = true;
+            desc.ScissorEnable = false;
+            desc.MultisampleEnable = false;
+            desc.AntialiasedLineEnable = false;
+            qk_CheckHR(m_dev->CreateRasterizerState(&desc, m_rs.ReleaseAndGetAddressOf()));
+        }
+
+        // scene constant buffer
+        {
+            D3D11_BUFFER_DESC desc{};
+            desc.ByteWidth = sizeof(GizmoPassSceneConstants);
+            desc.Usage = D3D11_USAGE_DYNAMIC;
+            desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+            desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+            desc.MiscFlags = 0;
+            desc.StructureByteStride = 0;
+            qk_CheckHR(m_dev->CreateBuffer(&desc, nullptr, m_cb_scene.ReleaseAndGetAddressOf()));
+        }
+
+        // object constant buffer
+        {
+            D3D11_BUFFER_DESC desc{};
+            desc.ByteWidth = sizeof(GizmoPassObjectConstants);
+            desc.Usage = D3D11_USAGE_DYNAMIC;
+            desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+            desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+            desc.MiscFlags = 0;
+            desc.StructureByteStride = 0;
+            qk_CheckHR(m_dev->CreateBuffer(&desc, nullptr, m_cb_object.ReleaseAndGetAddressOf()));
+        }
     }
     void GizmoPass::Render(int w, int h, ID3D11RenderTargetView* rtv, ID3D11DepthStencilView* dsv, const Scene& scene)
     {
@@ -691,9 +748,9 @@ namespace qk
                 // upload object constants
                 {
                     Matrix translate{ Matrix::CreateTranslation(Vector3{ point_light.position.elems }) };
-                    Matrix scale{ Matrix::CreateScale(Vector3{ 1.0f, 1.0f, 1.0f }) }; // TODO: hardcoded
+                    Matrix scale{ Matrix::CreateScale(Vector3{ .25f, .25f, .25f }) }; // TODO: hardcoded
                     Matrix model{ scale * translate };
-                    
+
                     d11::SubresourceMap map{ m_ctx, m_cb_object.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
                     auto constants{ static_cast<GizmoPassObjectConstants*>(map.Data()) };
                     constants->model = model;
