@@ -29,6 +29,12 @@ namespace qk
         v3 color{ 1.0f, 1.0f, 1.0f };
     };
 
+    struct PointLight
+    {
+        v3 position{};
+        v3 color{ 1.0f, 1.0f, 1.0f };
+    };
+
     struct Object
     {
         v3 position{};
@@ -45,6 +51,7 @@ namespace qk
         Background background{};
         Camera camera{};
         DirectionalLight directional_light{};
+        std::vector<PointLight> point_lights{};
         std::vector<Object> objects{};
     };
 }

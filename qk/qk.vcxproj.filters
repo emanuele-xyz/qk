@@ -68,6 +68,6 @@
     <FxCompile Include="hlsl\src\OpaquePassPS.hlsl" />
   </ItemGroup>
   <ItemGroup>
-    <CopyFileToFolders Include="hlsl\include\qk\OpaquePassConstants.hlsli" />
+    <CopyFileToFolders Include="hlsl\include\qk\OpaquePassBuffers.hlsli" />
   </ItemGroup>
 </Project>

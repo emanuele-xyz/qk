@@ -129,7 +129,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="hlsl\include\qk\OpaquePass.hlsli" />
-    <CopyFileToFolders Include="hlsl\include\qk\OpaquePassConstants.hlsli">
+    <CopyFileToFolders Include="hlsl\include\qk\OpaquePassBuffers.hlsli">
       <FileType>Document</FileType>
       <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)\private\qk\hlsl\</DestinationFolders>
       <DestinationFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(Filename).h</DestinationFileName>

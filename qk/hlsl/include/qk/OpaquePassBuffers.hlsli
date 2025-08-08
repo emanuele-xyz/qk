@@ -5,6 +5,8 @@ struct OpaquePassSceneConstants
 {
     matrix view;
     matrix projection;
+    int point_lights_count;
+    float _pad[3];
 };
 
 struct OpaquePassObjectConstants
@@ -20,6 +22,12 @@ struct OpaquePassObjectConstants
         float3 color;
         float _pad1;
     } directional_light;
+};
+
+struct OpaquePassPointLight
+{
+    float3 world_position;
+    float3 color;
 };
 
 #endif

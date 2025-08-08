@@ -1,7 +1,7 @@
 #ifndef __QK_OPAQUE_PASS__
 #define __QK_OPAQUE_PASS__
 
-#include <qk/OpaquePassConstants.hlsli>
+#include <qk/OpaquePassBuffers.hlsli>
 
 struct VSInput
 {
@@ -13,6 +13,7 @@ struct VSInput
 struct VSOutput
 {
     float4 clip_position : SV_POSITION;
+    float3 world_position : POSITION;
     float3 world_normal : NORMAL;
     float2 uv : TEXCOORD;
 };
@@ -30,5 +31,7 @@ cbuffer CBObject : register(b1)
 SamplerState albedo_sampler : register(s0);
 
 Texture2D albedo_texture : register(t0);
+
+StructuredBuffer<OpaquePassPointLight> sb_point_lights : register(t1);
 
 #endif

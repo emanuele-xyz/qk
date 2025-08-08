@@ -9,11 +9,13 @@ using Matrix = DirectX::SimpleMath::Matrix;
 using Vector3 = DirectX::SimpleMath::Vector3;
 namespace dx = DirectX; // for DirectX namespace included by DirectXMath (included by SimpleMath)
 
+#define int std::int32_t
 #define matrix Matrix
 #define float3 Vector3
-#include <qk/hlsl/OpaquePassConstants.h>
+#include <qk/hlsl/OpaquePassBuffers.h>
 #undef float3
 #undef matrix
+#undef int
 
 #include <qk/hlsl/OpaquePassVS.h>
 #include <qk/hlsl/OpaquePassPS.h>
@@ -371,6 +373,8 @@ namespace qk
         wrl::ComPtr<ID3D11SamplerState> m_texture_ss;
         wrl::ComPtr<ID3D11Buffer> m_cb_scene;
         wrl::ComPtr<ID3D11Buffer> m_cb_object;
+        wrl::ComPtr<ID3D11Buffer> m_sb_point_lights;
+        wrl::ComPtr<ID3D11ShaderResourceView> m_srv_point_lights;
         wrl::ComPtr<ID3D11Texture2D> m_depth_stencil_buffer;
         wrl::ComPtr<ID3D11DepthStencilView> m_dsv;
     };
@@ -386,6 +390,8 @@ namespace qk
         , m_rs{}
         , m_cb_scene{}
         , m_cb_object{}
+        , m_sb_point_lights{}
+        , m_srv_point_lights{}
         , m_depth_stencil_buffer{}
         , m_dsv{}
     {
@@ -465,6 +471,33 @@ namespace qk
     }
     void OpaquePass::Render(int w, int h, ID3D11RenderTargetView* rtv, const Scene& scene)
     {
+        // resize point lights structured buffer if necessary
+        {
+            D3D11_BUFFER_DESC desc{};
+            desc.ByteWidth = 0;
+            desc.Usage = D3D11_USAGE_DYNAMIC;
+            desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+            desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+            desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+            desc.StructureByteStride = sizeof(OpaquePassPointLight);
+
+            if (m_sb_point_lights)
+            {
+                m_sb_point_lights->GetDesc(&desc);
+            }
+
+            UINT expected_size_in_bytes{ static_cast<UINT>(scene.point_lights.size() * sizeof(OpaquePassPointLight)) };
+            if (desc.ByteWidth != expected_size_in_bytes)
+            {
+                desc.ByteWidth = expected_size_in_bytes;
+
+                // buffer
+                qk_CheckHR(m_dev->CreateBuffer(&desc, nullptr, m_sb_point_lights.ReleaseAndGetAddressOf()));
+                // srv
+                qk_CheckHR(m_dev->CreateShaderResourceView(m_sb_point_lights.Get(), nullptr, m_srv_point_lights.ReleaseAndGetAddressOf()));
+            }
+        }
+
         // resize depth buffer if w or h changed
         {
             D3D11_TEXTURE2D_DESC desc{};
@@ -519,7 +552,7 @@ namespace qk
             m_ctx->OMSetRenderTargets(1, &rtv, m_dsv.Get());
         }
 
-        // build camera view and projection matriaces, then upload them to the GPU
+        // upload scene constants
         {
             float aspect{ m_viewport.Width / m_viewport.Height };
             float fov_rad{ DirectX::XMConvertToRadians(scene.camera.fov_deg) };
@@ -530,6 +563,19 @@ namespace qk
             auto constants{ static_cast<OpaquePassSceneConstants*>(map.Data()) };
             constants->view = view;
             constants->projection = projection;
+            constants->point_lights_count = static_cast<std::int32_t>(scene.point_lights.size());
+        }
+
+        // upload point lights
+        {
+            d11::SubresourceMap map{ m_ctx, m_sb_point_lights.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
+            auto constants{ static_cast<OpaquePassPointLight*>(map.Data()) };
+
+            for (int i{}; i < static_cast<int>(scene.point_lights.size()); i++)
+            {
+                constants[i].world_position = Vector3{ scene.point_lights[i].position.elems };
+                constants[i].color = Vector3{ scene.point_lights[i].color.elems };
+            }
         }
 
         // loop over each object node and render it
@@ -575,7 +621,7 @@ namespace qk
 
                 // prepare texture related data for pipeline state
                 ID3D11SamplerState* sss[]{ m_texture_ss.Get() };
-                ID3D11ShaderResourceView* srvs[]{ albedo.SRV() };
+                ID3D11ShaderResourceView* srvs[]{ albedo.SRV(), m_srv_point_lights.Get() };
 
                 // set pipeline state
                 m_ctx->IASetIndexBuffer(mesh.Indices(), MESH_INDEX_FORMAT, 0);

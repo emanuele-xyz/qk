@@ -19,31 +19,36 @@ namespace qk_gui
     {
         // TODO: to be removed
         {
-            qk::Object object{};
-            object.position;
-            object.rotation;
-            object.scaling;
-            object.mesh_id;
-            object.albedo_mix;
-            object.albedo_color;
-            object.albedo_id;
+            m_scene.directional_light.color = qk::v3{};
+            m_scene.directional_light.direction = qk::v3{};
 
-            object = qk::Object{};
-            object.rotation = qk::v3{ -90.0f, 0.0f, 0.0f };
-            object.scaling = qk::v3{ 10.0f, 10.0f, 1.0f };
-            object.mesh_id = qk::QUAD;
-            object.albedo_mix = 0.75f;
-            object.albedo_color = qk::v3{ 1.0f, 0.0f, 0.0f };
-            object.albedo_id = qk::ALBEDO_CHECKER;
-            m_scene.objects.emplace_back(object);
+            {
+                qk::PointLight point_light{};
 
-            object = qk::Object{};
-            object.position = qk::v3{ 0.0f, 0.5f, 0.0f };
-            object.mesh_id = qk::CUBE;
-            object.albedo_mix = 0.75f;
-            object.albedo_color = qk::v3{ 0.0f, 0.0f, 1.0f };
-            object.albedo_id = qk::ALBEDO_CHECKER;
-            m_scene.objects.emplace_back(object);
+                point_light.position = qk::v3{ 1.0f, 1.0f, 1.0f };
+                m_scene.point_lights.emplace_back(point_light);
+            }
+
+            {
+                qk::Object object{};
+
+                object = qk::Object{};
+                object.rotation = qk::v3{ -90.0f, 0.0f, 0.0f };
+                object.scaling = qk::v3{ 10.0f, 10.0f, 1.0f };
+                object.mesh_id = qk::QUAD;
+                object.albedo_mix = 0.75f;
+                object.albedo_color = qk::v3{ 1.0f, 0.0f, 0.0f };
+                object.albedo_id = qk::ALBEDO_CHECKER;
+                m_scene.objects.emplace_back(object);
+
+                object = qk::Object{};
+                object.position = qk::v3{ 0.0f, 0.5f, 0.0f };
+                object.mesh_id = qk::CUBE;
+                object.albedo_mix = 0.75f;
+                object.albedo_color = qk::v3{ 0.0f, 0.0f, 1.0f };
+                object.albedo_id = qk::ALBEDO_CHECKER;
+                m_scene.objects.emplace_back(object);
+            }
         }
     }
     void Editor::Update(float dt)
