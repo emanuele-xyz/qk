@@ -13,6 +13,7 @@ namespace dx = DirectX; // for DirectX namespace included by DirectXMath (includ
 #define matrix Matrix
 #define float3 Vector3
 #include <qk/hlsl/OpaquePassBuffers.h>
+#include <qk/hlsl/GizmoPassBuffers.h>
 #undef float3
 #undef matrix
 #undef int
@@ -359,7 +360,7 @@ namespace qk
         OpaquePass& operator=(const OpaquePass&) = delete;
         OpaquePass& operator=(OpaquePass&&) noexcept = delete;
     public:
-        void Render(int w, int h, ID3D11RenderTargetView* rtv, const Scene& scene);
+        void Render(int w, int h, ID3D11RenderTargetView* rtv, ID3D11DepthStencilView* dsv, const Scene& scene);
     private:
         ID3D11Device* m_dev;
         ID3D11DeviceContext* m_ctx;
@@ -375,8 +376,6 @@ namespace qk
         wrl::ComPtr<ID3D11Buffer> m_cb_object;
         wrl::ComPtr<ID3D11Buffer> m_sb_point_lights;
         wrl::ComPtr<ID3D11ShaderResourceView> m_srv_point_lights;
-        wrl::ComPtr<ID3D11Texture2D> m_depth_stencil_buffer;
-        wrl::ComPtr<ID3D11DepthStencilView> m_dsv;
     };
     OpaquePass::OpaquePass(ID3D11Device* dev, ID3D11DeviceContext* ctx, const std::vector<Mesh>& meshes, const std::vector<Texture>& textures)
         : m_dev{ dev }
@@ -392,8 +391,6 @@ namespace qk
         , m_cb_object{}
         , m_sb_point_lights{}
         , m_srv_point_lights{}
-        , m_depth_stencil_buffer{}
-        , m_dsv{}
     {
         // vertex shader
         qk_CheckHR(m_dev->CreateVertexShader(OpaquePassVS_bytes, sizeof(OpaquePassVS_bytes), nullptr, m_vs.ReleaseAndGetAddressOf()));
@@ -469,7 +466,7 @@ namespace qk
             qk_CheckHR(m_dev->CreateBuffer(&desc, nullptr, m_cb_object.ReleaseAndGetAddressOf()));
         }
     }
-    void OpaquePass::Render(int w, int h, ID3D11RenderTargetView* rtv, const Scene& scene)
+    void OpaquePass::Render(int w, int h, ID3D11RenderTargetView* rtv, ID3D11DepthStencilView* dsv, const Scene& scene)
     {
         // resize point lights structured buffer if necessary
         {
@@ -498,40 +495,6 @@ namespace qk
             }
         }
 
-        // resize depth buffer if w or h changed
-        {
-            D3D11_TEXTURE2D_DESC desc{};
-            desc.Width = 0;
-            desc.Height = 0;
-            desc.MipLevels = 1;
-            desc.ArraySize = 1;
-            desc.Format = DXGI_FORMAT_D32_FLOAT;
-            desc.SampleDesc = { .Count = 1, .Quality = 0 };
-            desc.Usage = D3D11_USAGE_DEFAULT;
-            desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-            desc.CPUAccessFlags = 0;
-            desc.MiscFlags = 0;
-
-            if (m_depth_stencil_buffer)
-            {
-                m_depth_stencil_buffer->GetDesc(&desc);
-            }
-
-            if (desc.Width != static_cast<UINT>(w) || desc.Height != static_cast<UINT>(h))
-            {
-                desc.Width = static_cast<UINT>(w);
-                desc.Height = static_cast<UINT>(h);
-
-                // depth stencil buffer
-                qk_CheckHR(m_dev->CreateTexture2D(&desc, nullptr, m_depth_stencil_buffer.ReleaseAndGetAddressOf()));
-                // depth stencil view
-                qk_CheckHR(m_dev->CreateDepthStencilView(m_depth_stencil_buffer.Get(), nullptr, m_dsv.ReleaseAndGetAddressOf()));
-            }
-        }
-
-        // clear dsv
-        m_ctx->ClearDepthStencilView(m_dsv.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
-
         // set new viewport data
         m_viewport.Width = static_cast<float>(w);
         m_viewport.Height = static_cast<float>(h);
@@ -549,14 +512,14 @@ namespace qk
             m_ctx->PSSetConstantBuffers(0, std::size(cbufs), cbufs);
             m_ctx->RSSetState(m_rs.Get());
             m_ctx->RSSetViewports(1, &m_viewport);
-            m_ctx->OMSetRenderTargets(1, &rtv, m_dsv.Get());
+            m_ctx->OMSetRenderTargets(1, &rtv, dsv);
         }
 
         // upload scene constants
         {
             float aspect{ m_viewport.Width / m_viewport.Height };
             float fov_rad{ DirectX::XMConvertToRadians(scene.camera.fov_deg) };
-            Matrix view{ Matrix::CreateLookAt(Vector3{ scene.camera.eye.elems }, Vector3{ scene.camera.target.elems }, { 0.0f, 1.0f, 0.0f }) };
+            Matrix view{ Matrix::CreateLookAt(Vector3{ scene.camera.eye.elems }, Vector3{ scene.camera.target.elems }, Vector3{ scene.camera.up.elems }) };
             Matrix projection{ Matrix::CreatePerspectiveFieldOfView(fov_rad, aspect, scene.camera.near_plane, scene.camera.far_plane) };
 
             d11::SubresourceMap map{ m_ctx, m_cb_scene.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
@@ -635,6 +598,114 @@ namespace qk
         }
     }
 
+    class GizmoPass
+    {
+    public:
+        GizmoPass(ID3D11Device* dev, ID3D11DeviceContext* ctx, const std::vector<Mesh>& meshes);
+        ~GizmoPass() = default;
+        GizmoPass(const GizmoPass&) = delete;
+        GizmoPass(GizmoPass&&) noexcept = delete;
+        GizmoPass& operator=(const GizmoPass&) = delete;
+        GizmoPass& operator=(GizmoPass&&) noexcept = delete;
+    public:
+        void Render(int w, int h, ID3D11RenderTargetView* rtv, ID3D11DepthStencilView* dsv, const Scene& scene);
+    private:
+        ID3D11Device* m_dev;
+        ID3D11DeviceContext* m_ctx;
+        const std::vector<Mesh>& m_meshes;
+        D3D11_VIEWPORT m_viewport;
+        wrl::ComPtr<ID3D11VertexShader> m_vs;
+        wrl::ComPtr<ID3D11PixelShader> m_ps;
+        wrl::ComPtr<ID3D11InputLayout> m_il;
+        wrl::ComPtr<ID3D11RasterizerState> m_rs;
+        wrl::ComPtr<ID3D11Buffer> m_cb_scene;
+        wrl::ComPtr<ID3D11Buffer> m_cb_object;
+    };
+    GizmoPass::GizmoPass(ID3D11Device* dev, ID3D11DeviceContext* ctx, const std::vector<Mesh>& meshes)
+        : m_dev{ dev }
+        , m_ctx{ ctx }
+        , m_meshes{ meshes }
+        , m_viewport{ .TopLeftX = 0.0f, .TopLeftY = 0.0f, .MinDepth = 0.0f, .MaxDepth = 1.0f }
+        , m_vs{}
+        , m_ps{}
+        , m_il{}
+        , m_rs{}
+        , m_cb_scene{}
+        , m_cb_object{}
+    {
+    }
+    void GizmoPass::Render(int w, int h, ID3D11RenderTargetView* rtv, ID3D11DepthStencilView* dsv, const Scene& scene)
+    {
+        // set new viewport data
+        m_viewport.Width = static_cast<float>(w);
+        m_viewport.Height = static_cast<float>(h);
+
+        // prepare pipeline for drawing
+        {
+            ID3D11Buffer* cbufs[]{ m_cb_scene.Get(), m_cb_object.Get() };
+
+            m_ctx->ClearState();
+            m_ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+            m_ctx->IASetInputLayout(m_il.Get());
+            m_ctx->VSSetShader(m_vs.Get(), nullptr, 0);
+            m_ctx->VSSetConstantBuffers(0, std::size(cbufs), cbufs);
+            m_ctx->PSSetShader(m_ps.Get(), nullptr, 0);
+            m_ctx->PSSetConstantBuffers(0, std::size(cbufs), cbufs);
+            m_ctx->RSSetState(m_rs.Get());
+            m_ctx->RSSetViewports(1, &m_viewport);
+            m_ctx->OMSetRenderTargets(1, &rtv, dsv);
+        }
+
+        // upload scene constants
+        {
+            float aspect{ m_viewport.Width / m_viewport.Height };
+            float fov_rad{ DirectX::XMConvertToRadians(scene.camera.fov_deg) };
+            Matrix view{ Matrix::CreateLookAt(Vector3{ scene.camera.eye.elems }, Vector3{ scene.camera.target.elems }, Vector3{ scene.camera.up.elems }) };
+            Matrix projection{ Matrix::CreatePerspectiveFieldOfView(fov_rad, aspect, scene.camera.near_plane, scene.camera.far_plane) };
+
+            d11::SubresourceMap map{ m_ctx, m_cb_scene.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
+            auto constants{ static_cast<GizmoPassSceneConstants*>(map.Data()) };
+            constants->view = view;
+            constants->projection = projection;
+        }
+
+        // render point lights 
+        {
+            // use cube mesh as point light gizmo (TODO: use spherical mesh)
+            const Mesh& mesh{ m_meshes.at(static_cast<std::size_t>(CUBE)) };
+
+            // set point light related pipeline state 
+            {
+                // prepare mesh related data for pipeline state
+                ID3D11Buffer* vertices{ mesh.Vertices() };
+                UINT vertex_stride{ sizeof(MeshVertex) };
+                UINT vertex_offset{};
+
+                // set pipeline state
+                m_ctx->IASetIndexBuffer(mesh.Indices(), MESH_INDEX_FORMAT, 0);
+                m_ctx->IASetVertexBuffers(0, 1, &vertices, &vertex_stride, &vertex_offset);
+            }
+
+            for (const PointLight& point_light : scene.point_lights)
+            {
+                // upload object constants
+                {
+                    Matrix translate{ Matrix::CreateTranslation(Vector3{ point_light.position.elems }) };
+                    Matrix scale{ Matrix::CreateScale(Vector3{ 1.0f, 1.0f, 1.0f }) }; // TODO: hardcoded
+                    Matrix model{ scale * translate };
+                    
+                    d11::SubresourceMap map{ m_ctx, m_cb_object.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
+                    auto constants{ static_cast<GizmoPassObjectConstants*>(map.Data()) };
+                    constants->model = model;
+                    constants->color = Vector3{ point_light.color.elems };
+                }
+
+                // draw
+                m_ctx->DrawIndexed(mesh.IndexCount(), 0, 0);
+            }
+        }
+    }
+
     class RendererImpl
     {
     public:
@@ -651,7 +722,10 @@ namespace qk
         ID3D11DeviceContext* m_ctx;
         std::vector<Mesh> m_meshes;
         std::vector<Texture> m_textures;
+        wrl::ComPtr<ID3D11Texture2D> m_depth_stencil_buffer;
+        wrl::ComPtr<ID3D11DepthStencilView> m_dsv;
         OpaquePass m_opaque_pass;
+        GizmoPass m_gizmo_pass;
     };
 
     RendererImpl::RendererImpl(ID3D11Device* dev, ID3D11DeviceContext* ctx)
@@ -659,7 +733,10 @@ namespace qk
         , m_ctx{ ctx }
         , m_meshes{}
         , m_textures{}
+        , m_depth_stencil_buffer{}
+        , m_dsv{}
         , m_opaque_pass{ m_dev, m_ctx, m_meshes, m_textures }
+        , m_gizmo_pass{ m_dev, m_ctx, m_meshes }
     {
         // upload default meshes
         {
@@ -700,11 +777,46 @@ namespace qk
     }
     void RendererImpl::Render(int w, int h, ID3D11RenderTargetView* rtv, const Scene& scene)
     {
+        // resize depth buffer if w or h changed
+        {
+            D3D11_TEXTURE2D_DESC desc{};
+            desc.Width = 0;
+            desc.Height = 0;
+            desc.MipLevels = 1;
+            desc.ArraySize = 1;
+            desc.Format = DXGI_FORMAT_D32_FLOAT;
+            desc.SampleDesc = { .Count = 1, .Quality = 0 };
+            desc.Usage = D3D11_USAGE_DEFAULT;
+            desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+            desc.CPUAccessFlags = 0;
+            desc.MiscFlags = 0;
+
+            if (m_depth_stencil_buffer)
+            {
+                m_depth_stencil_buffer->GetDesc(&desc);
+            }
+
+            if (desc.Width != static_cast<UINT>(w) || desc.Height != static_cast<UINT>(h))
+            {
+                desc.Width = static_cast<UINT>(w);
+                desc.Height = static_cast<UINT>(h);
+
+                // depth stencil buffer
+                qk_CheckHR(m_dev->CreateTexture2D(&desc, nullptr, m_depth_stencil_buffer.ReleaseAndGetAddressOf()));
+                // depth stencil view
+                qk_CheckHR(m_dev->CreateDepthStencilView(m_depth_stencil_buffer.Get(), nullptr, m_dsv.ReleaseAndGetAddressOf()));
+            }
+        }
+
         // clear rtv using the specified background
         m_ctx->ClearRenderTargetView(rtv, scene.background.color.elems);
 
+        // clear dsv
+        m_ctx->ClearDepthStencilView(m_dsv.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+
         // run render passes
-        m_opaque_pass.Render(w, h, rtv, scene);
+        m_opaque_pass.Render(w, h, rtv, m_dsv.Get(), scene);
+        m_gizmo_pass.Render(w, h, rtv, m_dsv.Get(), scene);
     }
 
     Renderer::Renderer(void* d3d_dev, void* d3d_ctx)

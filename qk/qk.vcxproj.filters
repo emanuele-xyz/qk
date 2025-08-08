@@ -62,6 +62,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="hlsl\include\qk\OpaquePass.hlsli" />
+    <None Include="hlsl\include\qk\GizmoPass.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="hlsl\src\OpaquePassVS.hlsl" />
@@ -69,5 +70,6 @@
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="hlsl\include\qk\OpaquePassBuffers.hlsli" />
+    <CopyFileToFolders Include="hlsl\include\qk\GizmoPassBuffers.hlsli" />
   </ItemGroup>
 </Project>

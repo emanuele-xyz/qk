@@ -1,5 +1,5 @@
-#ifndef __QK_OPAQUE_PASS_CONSTANTS__
-#define __QK_OPAQUE_PASS_CONSTANTS__
+#ifndef __QK_OPAQUE_PASS_BUFFERS__
+#define __QK_OPAQUE_PASS_BUFFERS__
 
 struct OpaquePassSceneConstants
 {
