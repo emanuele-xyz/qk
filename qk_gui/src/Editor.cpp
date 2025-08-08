@@ -27,6 +27,9 @@ namespace qk_gui
 
                 point_light.position = qk::v3{ 1.0f, 1.0f, 1.0f };
                 m_scene.point_lights.emplace_back(point_light);
+
+                point_light.position = qk::v3{ -1.0f, +1.0f, -1.0f };
+                m_scene.point_lights.emplace_back(point_light);
             }
 
             {
@@ -136,6 +139,26 @@ namespace qk_gui
                     ImGui::DragFloat3("Direction", m_scene.directional_light.direction.elems, 0.01f, -1.0f, +1.0f);
                     ImGui::ColorEdit3("Color", m_scene.directional_light.color.elems);
 
+                    ImGui::EndTabItem();
+                }
+                if (ImGui::BeginTabItem("Point Lights"))
+                {
+                    for (std::size_t i{}; i < m_scene.point_lights.size(); i++)
+                    {
+                        qk::PointLight& point_light{ m_scene.point_lights[i] };
+
+                        ImGui::PushID(static_cast<int>(i));
+                        {
+                            std::string label{ std::format("Point Light {}", i) };
+                            ImGuiTreeNodeFlags tree_node_flags{ ImGuiTreeNodeFlags_DefaultOpen };
+                            if (ImGui::CollapsingHeader(label.c_str(), tree_node_flags))
+                            {
+                                ImGui::DragFloat3("Position", point_light.position.elems, 0.01f);
+                                ImGui::ColorEdit3("Color", point_light.color.elems);
+                            }
+                        }
+                        ImGui::PopID();
+                    }
                     ImGui::EndTabItem();
                 }
                 if (ImGui::BeginTabItem("Objects"))
