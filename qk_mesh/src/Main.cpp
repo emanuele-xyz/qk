@@ -11,6 +11,63 @@ namespace qk_mesh
     constexpr int PROGRAM_NAME_IDX{ 0 };
     constexpr int MESH_PATH_IDX{ PROGRAM_NAME_IDX + 1 };
 
+    struct MeshVertexHasher
+    {
+        std::size_t operator()(const qk::MeshVertex& vertex) const noexcept
+        {
+            // courtesy of ChatGPT
+
+            std::size_t h1{ std::hash<float>{}(vertex.position.x()) };
+            std::size_t h2{ std::hash<float>{}(vertex.position.y()) };
+            std::size_t h3{ std::hash<float>{}(vertex.position.z()) };
+
+            std::size_t h4{ std::hash<float>{}(vertex.normal.x()) };
+            std::size_t h5{ std::hash<float>{}(vertex.normal.y()) };
+            std::size_t h6{ std::hash<float>{}(vertex.normal.z()) };
+
+            std::size_t h7{ std::hash<float>{}(vertex.uvs.x()) };
+            std::size_t h8{ std::hash<float>{}(vertex.uvs.y()) };
+
+            // combine hashes using a hash-combine function
+            std::size_t seed{ h1 };
+            seed ^= h2 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+            seed ^= h3 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+            seed ^= h4 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+            seed ^= h5 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+            seed ^= h6 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+            seed ^= h7 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+            seed ^= h8 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+
+            return seed;
+        }
+    };
+
+    struct MeshVertexEqual
+    {
+        bool operator()(const qk::MeshVertex& a, const qk::MeshVertex& b) const noexcept
+        {
+            return
+                a.position.x() == b.position.x() &&
+                a.position.y() == b.position.y() &&
+                a.position.z() == b.position.z() &&
+                a.normal.x() == b.normal.x() &&
+                a.normal.y() == b.normal.y() &&
+                a.normal.z() == b.normal.z() &&
+                a.uvs.x() == b.uvs.x() &&
+                a.uvs.y() == b.uvs.y();
+        }
+    };
+
+    static void PrintV3(const qk::v3& v)
+    {
+        std::cout << std::fixed << "{ " << v.x() << "f, " << v.y() << "f, " << v.z() << "f }";
+    }
+
+    static void PrintV2(const qk::v2& v)
+    {
+        std::cout << "{ " << v.x() << "f , " << v.y() << "f }";
+    }
+
     static void Entry(int argc, char* argv[])
     {
         if (argc <= MESH_PATH_IDX)
@@ -34,10 +91,11 @@ namespace qk_mesh
                     std::cout << "[WARN]: " << reader.Warning();
                 }
 
+                // convert obj mesh into indexed mesh
+                std::vector<qk::MeshVertex> vertices{};
+                std::vector<qk::MeshIndex> indices{};
                 {
-                    std::vector<qk::MeshVertex> vertices{};
-                    std::vector<qk::MeshIndex> indices{};
-                    std::unordered_map<qk::MeshVertex, qk::MeshIndex> vertex_to_index_table{};
+                    std::unordered_map<qk::MeshVertex, qk::MeshIndex, MeshVertexHasher, MeshVertexEqual> vertex_to_index_table{};
 
                     const tinyobj::attrib_t& attrib{ reader.GetAttrib() };
                     const std::vector<tinyobj::shape_t>& shapes{ reader.GetShapes() };
@@ -114,6 +172,36 @@ namespace qk_mesh
                             index_offset += fv;
                         }
                     }
+                }
+
+                // print indexed mesh
+                {
+                    // print vertices
+                    std::cout << "MeshVertex vertices[]\n{\n";
+                    for (const qk::MeshVertex& vertex : vertices)
+                    {
+                        std::cout << "{ ";
+                        PrintV3(vertex.position);
+                        std::cout << ", ";
+                        PrintV3(vertex.normal);
+                        std::cout << ", ";
+                        PrintV2(vertex.uvs);
+                        std::cout << " },\n";
+                    }
+                    std::cout << "};\n";
+
+                    // print indices
+                    std::cout << "MeshIndex indices[]\n{\n";
+                    for (std::size_t i{}; i < indices.size(); i++)
+                    {
+                        const qk::MeshIndex& index{ indices[i] };
+                        std::cout << index << ", ";
+                        if ((i + 1) % 3 == 0 || i == indices.size() - 1)
+                        {
+                            std::cout << "\n";
+                        }
+                    }
+                    std::cout << "};\n";
                 }
             }
             else // parse failed
