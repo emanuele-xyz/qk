@@ -11,6 +11,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "imgui", "imgui\imgui.vcxpro
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SimpleMath", "SimpleMath\SimpleMath.vcxproj", "{FB77E580-B840-426C-B9E9-D6EC38857E21}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tinyobjloader", "tinyobjloader\tinyobjloader.vcxproj", "{AC78A41B-4E30-4B09-9DFF-1F5763AE44AF}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "qk_mesh", "qk_mesh\qk_mesh.vcxproj", "{480223F6-D738-4E57-B289-C7B5E90328AB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -33,6 +37,14 @@ Global
 		{FB77E580-B840-426C-B9E9-D6EC38857E21}.Debug|x64.Build.0 = Debug|x64
 		{FB77E580-B840-426C-B9E9-D6EC38857E21}.Release|x64.ActiveCfg = Release|x64
 		{FB77E580-B840-426C-B9E9-D6EC38857E21}.Release|x64.Build.0 = Release|x64
+		{AC78A41B-4E30-4B09-9DFF-1F5763AE44AF}.Debug|x64.ActiveCfg = Debug|x64
+		{AC78A41B-4E30-4B09-9DFF-1F5763AE44AF}.Debug|x64.Build.0 = Debug|x64
+		{AC78A41B-4E30-4B09-9DFF-1F5763AE44AF}.Release|x64.ActiveCfg = Release|x64
+		{AC78A41B-4E30-4B09-9DFF-1F5763AE44AF}.Release|x64.Build.0 = Release|x64
+		{480223F6-D738-4E57-B289-C7B5E90328AB}.Debug|x64.ActiveCfg = Debug|x64
+		{480223F6-D738-4E57-B289-C7B5E90328AB}.Debug|x64.Build.0 = Debug|x64
+		{480223F6-D738-4E57-B289-C7B5E90328AB}.Release|x64.ActiveCfg = Release|x64
+		{480223F6-D738-4E57-B289-C7B5E90328AB}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
