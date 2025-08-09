@@ -28,6 +28,7 @@ struct OpaquePassPointLight
 {
     float3 world_position;
     float3 color;
+    float r_min;
 };
 
 #endif

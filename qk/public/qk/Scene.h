@@ -33,6 +33,7 @@ namespace qk
     {
         v3 position{};
         v3 color{ 1.0f, 1.0f, 1.0f };
+        float r_min{ 0.1f };
     };
 
     struct Object

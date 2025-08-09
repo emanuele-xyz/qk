@@ -11,11 +11,15 @@ float3 lambert(float3 l, float3 n, float3 c_light, float3 c_surface)
 /*
     Compute the light's color based on distance
     r: distance between the shaded point and the light source
+    r_min: radius of the physical object emitting the light
     c_light_0: c_light at distance r_0
 */
-float3 c_light(float r, float r_0, float3 c_light_0)
+float3 c_light(float r, float r_min, float r_0, float3 c_light_0)
 {
-    return c_light_0 * (r_0 / r) * (r_0 / r);
+    r = max(r, r_min);
+    float r_0_over_r = r_0 / r;
+    float r_0_over_r_squared = r_0_over_r * r_0_over_r;
+    return c_light_0 * r_0_over_r_squared;
 }
 
 float4 main(VSOutput input) : SV_TARGET
@@ -41,10 +45,12 @@ float4 main(VSOutput input) : SV_TARGET
     {
         for (int i = 0; i < cb_scene.point_lights_count; i++)
         {
-            float3 d = sb_point_lights[i].world_position - input.world_position;
+            OpaquePassPointLight point_light = sb_point_lights[i];
+            
+            float3 d = point_light.world_position - input.world_position;
             float r = length(d);
             float3 l = d / r;
-            shaded += lambert(l, n, c_light(r, 1, sb_point_lights[i].color), albedo);
+            shaded += lambert(l, n, c_light(r, point_light.r_min, 1, point_light.color), albedo);
         }
     }
     

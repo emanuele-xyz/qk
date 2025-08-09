@@ -1072,10 +1072,13 @@ namespace qk
             d11::SubresourceMap map{ m_ctx, m_sb_point_lights.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
             auto constants{ static_cast<OpaquePassPointLight*>(map.Data()) };
 
-            for (int i{}; i < static_cast<int>(scene.point_lights.size()); i++)
+            for (std::size_t i{}; i < scene.point_lights.size(); i++)
             {
-                constants[i].world_position = Vector3{ scene.point_lights[i].position.elems };
-                constants[i].color = Vector3{ scene.point_lights[i].color.elems };
+                const PointLight& point_light{ scene.point_lights[i] };
+
+                constants[i].world_position = Vector3{ point_light.position.elems };
+                constants[i].color = Vector3{ point_light.color.elems };
+                constants[i].r_min = point_light.r_min;
             }
         }
 
@@ -1286,7 +1289,7 @@ namespace qk
                 // upload object constants
                 {
                     Matrix translate{ Matrix::CreateTranslation(Vector3{ point_light.position.elems }) };
-                    Matrix scale{ Matrix::CreateScale(Vector3{ .25f, .25f, .25f }) }; // TODO: hardcoded
+                    Matrix scale{ Matrix::CreateScale(Vector3{ point_light.r_min, point_light.r_min, point_light.r_min }) }; // TODO: maybe not right
                     Matrix model{ scale * translate };
 
                     d11::SubresourceMap map{ m_ctx, m_cb_object.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
