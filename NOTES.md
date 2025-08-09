@@ -33,7 +33,25 @@ Punctual lights:
 - To avoid a divide by zero Unreal uses, `c_light(r) = c_light_0 * r_0^2 / (r^2 + epsylon)` with `epsylon = 1cm`.
 - CryEngine and Frostbite use `c_light(r) = c_light_0 * (r_0 / max(r, r_min))^2`.
 - `r_min` is the radius of the physical object emitting the light. 
-- For efficient rendering, the light's intensity should reach zero at some finite distance.
+- For efficient rendering, the light's intensity should reach zero at some finite distance (useful for culling).
 - To avoid sharp cutoffs, it would be advisable for the intensity and its derivative to reach zero at the same distance.
 - We multiply the inverse square equation by a windowing function `f_win(r)`.
 - Unreal and Frostbite use `f_win(r) = max((1 - (r / r_max)^4), 0)^2`.
+- The general representation is `c_light(r) = c_light_0 * f_dist(r)`.
+- `f_dist(r)` is called a distance falloff function.
+
+#### Spot Lights
+
+- illumination varies both by distance and direction.
+- `c_light(r) = c_light_0 * f_dist(r) * f_dir(l)`.
+- `f_dir(l)` is called a directional falloff function.
+- spot lights project light in a circular cone.
+- `s` is the spot light direction vector.
+- the distance falloff function can be expressed by the angle `theta_s` between `-l` and `s`
+- `theta_u` is the umbra angle (useful for culling).
+- `f_dir(l) = 0` for all `theta_s >= theta_u`
+- `theta_p` is the penumbra angle
+- the penumbra angle defines an inner cone where the light is at its full intensity.
+- let `t = clamp((cos theta_s - cos theta_u) / (cos theta_p - cos theta_u), 0, 1)`
+- `f_dir(r) = smothstep(t)`
+
