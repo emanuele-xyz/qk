@@ -51,6 +51,20 @@ namespace qk_gui
                 object.albedo_color = qk::v3{ 0.0f, 0.0f, 1.0f };
                 object.albedo_id = qk::ALBEDO_CHECKER;
                 m_scene.objects.emplace_back(object);
+
+                object = qk::Object{};
+                object.position = qk::v3{ -2.0f, 2.0f, 0.0f };
+                object.mesh_id = qk::ICOSPHERE;
+                object.albedo_mix = 0.0f;
+                object.albedo_color = qk::v3{ 0.0f, 1.0f, 1.0f };
+                m_scene.objects.emplace_back(object);
+
+                object = qk::Object{};
+                object.position = qk::v3{ +2.0f, 2.0f, 0.0f };
+                object.mesh_id = qk::CONE;
+                object.albedo_mix = 0.0f;
+                object.albedo_color = qk::v3{ 1.0f, 0.0f, 0.0f };
+                m_scene.objects.emplace_back(object);
             }
         }
     }
