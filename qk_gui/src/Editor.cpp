@@ -156,6 +156,7 @@ namespace qk_gui
                                 ImGui::DragFloat3("Position", point_light.position.elems, 0.01f);
                                 ImGui::ColorEdit3("Color", point_light.color.elems);
                                 ImGui::DragFloat("Min Radius", &point_light.r_min, 0.01f, 0.01f, 1000.0f);
+                                ImGui::DragFloat("Max Radius", &point_light.r_max, 0.01f, 0.01f, 1000.0f);
                             }
                         }
                         ImGui::PopID();

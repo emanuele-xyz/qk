@@ -1079,6 +1079,7 @@ namespace qk
                 constants[i].world_position = Vector3{ point_light.position.elems };
                 constants[i].color = Vector3{ point_light.color.elems };
                 constants[i].r_min = point_light.r_min;
+                constants[i].r_max = point_light.r_max;
             }
         }
 
@@ -1307,6 +1308,45 @@ namespace qk
                 // upload object constants
                 {
                     float diameter{ point_light.r_min * 2.0f };
+
+                    Matrix translate{ Matrix::CreateTranslation(Vector3{ point_light.position.elems }) };
+                    Matrix scale{ Matrix::CreateScale(Vector3{ diameter, diameter, diameter }) };
+                    Matrix model{ scale * translate };
+
+                    d11::SubresourceMap map{ m_ctx, m_cb_object.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
+                    auto constants{ static_cast<GizmoPassObjectConstants*>(map.Data()) };
+                    constants->model = model;
+                    constants->color = Vector3{ point_light.color.elems };
+                }
+
+                // draw
+                m_ctx->DrawIndexed(mesh.IndexCount(), 0, 0);
+            }
+        }
+
+        // render point light volumes
+        {
+            // use icosphere mesh as point light gizmo
+            const Mesh& mesh{ m_meshes.at(static_cast<std::size_t>(ICOSPHERE)) };
+
+            // set point light related pipeline state 
+            {
+                // prepare mesh related data for pipeline state
+                ID3D11Buffer* vertices{ mesh.Vertices() };
+                UINT vertex_stride{ sizeof(MeshVertex) };
+                UINT vertex_offset{};
+
+                // set pipeline state
+                m_ctx->IASetIndexBuffer(mesh.Indices(), MESH_INDEX_FORMAT, 0);
+                m_ctx->IASetVertexBuffers(0, 1, &vertices, &vertex_stride, &vertex_offset);
+                m_ctx->RSSetState(m_rs_wireframe.Get());
+            }
+
+            for (const PointLight& point_light : scene.point_lights)
+            {
+                // upload object constants
+                {
+                    float diameter{ point_light.r_max * 2.0f };
 
                     Matrix translate{ Matrix::CreateTranslation(Vector3{ point_light.position.elems }) };
                     Matrix scale{ Matrix::CreateScale(Vector3{ diameter, diameter, diameter }) };

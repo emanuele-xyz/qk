@@ -9,17 +9,30 @@ float3 lambert(float3 l, float3 n, float3 c_light, float3 c_surface)
 }
 
 /*
+    Point light distance windowing function
+    r: distance between the shaded point and the light source
+    r_max: maximum distance the light affects
+*/
+float f_win(float r, float r_max)
+{
+    float r_over_r_max = r / r_max;
+    float r_over_r_max_fourth = pow(r_over_r_max, 4);
+    float clamped = max(0, 1 - r_over_r_max_fourth);
+    return clamped * clamped;
+}
+
+/*
     Compute the light's color based on distance
     r: distance between the shaded point and the light source
     r_min: radius of the physical object emitting the light
     c_light_0: c_light at distance r_0
 */
-float3 c_light(float r, float r_min, float r_0, float3 c_light_0)
+float3 c_light(float r, float r_min, float r_max, float r_0, float3 c_light_0)
 {
     r = max(r, r_min);
     float r_0_over_r = r_0 / r;
     float r_0_over_r_squared = r_0_over_r * r_0_over_r;
-    return c_light_0 * r_0_over_r_squared;
+    return c_light_0 * f_win(r, r_max) * r_0_over_r_squared;
 }
 
 float4 main(VSOutput input) : SV_TARGET
@@ -50,7 +63,7 @@ float4 main(VSOutput input) : SV_TARGET
             float3 d = point_light.world_position - input.world_position;
             float r = length(d);
             float3 l = d / r;
-            shaded += lambert(l, n, c_light(r, point_light.r_min, 1, point_light.color), albedo);
+            shaded += lambert(l, n, c_light(r, point_light.r_min, point_light.r_max, 1, point_light.color), albedo);
         }
     }
     

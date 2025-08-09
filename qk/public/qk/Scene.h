@@ -34,6 +34,7 @@ namespace qk
         v3 position{};
         v3 color{ 1.0f, 1.0f, 1.0f };
         float r_min{ 0.1f };
+        float r_max{ 5.0f };
     };
 
     struct Object
