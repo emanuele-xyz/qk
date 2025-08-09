@@ -1158,7 +1158,8 @@ namespace qk
         wrl::ComPtr<ID3D11VertexShader> m_vs;
         wrl::ComPtr<ID3D11PixelShader> m_ps;
         wrl::ComPtr<ID3D11InputLayout> m_il;
-        wrl::ComPtr<ID3D11RasterizerState> m_rs;
+        wrl::ComPtr<ID3D11RasterizerState> m_rs_fill;
+        wrl::ComPtr<ID3D11RasterizerState> m_rs_wireframe;
         wrl::ComPtr<ID3D11Buffer> m_cb_scene;
         wrl::ComPtr<ID3D11Buffer> m_cb_object;
     };
@@ -1170,7 +1171,8 @@ namespace qk
         , m_vs{}
         , m_ps{}
         , m_il{}
-        , m_rs{}
+        , m_rs_fill{}
+        , m_rs_wireframe{}
         , m_cb_scene{}
         , m_cb_object{}
     {
@@ -1192,7 +1194,7 @@ namespace qk
             qk_CheckHR(m_dev->CreateInputLayout(desc, std::size(desc), GizmoPassVS_bytes, sizeof(GizmoPassVS_bytes), m_il.ReleaseAndGetAddressOf()));
         }
 
-        // rasterizer state
+        // fill rasterizer state
         {
             D3D11_RASTERIZER_DESC desc{};
             desc.FillMode = D3D11_FILL_SOLID;
@@ -1205,7 +1207,23 @@ namespace qk
             desc.ScissorEnable = false;
             desc.MultisampleEnable = false;
             desc.AntialiasedLineEnable = false;
-            qk_CheckHR(m_dev->CreateRasterizerState(&desc, m_rs.ReleaseAndGetAddressOf()));
+            qk_CheckHR(m_dev->CreateRasterizerState(&desc, m_rs_fill.ReleaseAndGetAddressOf()));
+        }
+
+        // wireframe rasterizer state
+        {
+            D3D11_RASTERIZER_DESC desc{};
+            desc.FillMode = D3D11_FILL_WIREFRAME;
+            desc.CullMode = D3D11_CULL_NONE;
+            desc.FrontCounterClockwise = true;
+            desc.DepthBias = 0;
+            desc.DepthBiasClamp = 0.0f;
+            desc.SlopeScaledDepthBias = 0.0f;
+            desc.DepthClipEnable = true;
+            desc.ScissorEnable = false;
+            desc.MultisampleEnable = false;
+            desc.AntialiasedLineEnable = false;
+            qk_CheckHR(m_dev->CreateRasterizerState(&desc, m_rs_wireframe.ReleaseAndGetAddressOf()));
         }
 
         // scene constant buffer
@@ -1249,7 +1267,6 @@ namespace qk
             m_ctx->VSSetConstantBuffers(0, std::size(cbufs), cbufs);
             m_ctx->PSSetShader(m_ps.Get(), nullptr, 0);
             m_ctx->PSSetConstantBuffers(0, std::size(cbufs), cbufs);
-            m_ctx->RSSetState(m_rs.Get());
             m_ctx->RSSetViewports(1, &m_viewport);
             m_ctx->OMSetRenderTargets(1, &rtv, dsv);
         }
@@ -1267,7 +1284,7 @@ namespace qk
             constants->projection = projection;
         }
 
-        // render point lights 
+        // render point light sources
         {
             // use icosphere mesh as point light gizmo
             const Mesh& mesh{ m_meshes.at(static_cast<std::size_t>(ICOSPHERE)) };
@@ -1282,14 +1299,17 @@ namespace qk
                 // set pipeline state
                 m_ctx->IASetIndexBuffer(mesh.Indices(), MESH_INDEX_FORMAT, 0);
                 m_ctx->IASetVertexBuffers(0, 1, &vertices, &vertex_stride, &vertex_offset);
+                m_ctx->RSSetState(m_rs_wireframe.Get());
             }
 
             for (const PointLight& point_light : scene.point_lights)
             {
                 // upload object constants
                 {
+                    float diameter{ point_light.r_min * 2.0f };
+
                     Matrix translate{ Matrix::CreateTranslation(Vector3{ point_light.position.elems }) };
-                    Matrix scale{ Matrix::CreateScale(Vector3{ point_light.r_min, point_light.r_min, point_light.r_min }) }; // TODO: maybe not right
+                    Matrix scale{ Matrix::CreateScale(Vector3{ diameter, diameter, diameter }) };
                     Matrix model{ scale * translate };
 
                     d11::SubresourceMap map{ m_ctx, m_cb_object.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
