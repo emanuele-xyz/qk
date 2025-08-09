@@ -1266,8 +1266,8 @@ namespace qk
 
         // render point lights 
         {
-            // use cube mesh as point light gizmo (TODO: use spherical mesh)
-            const Mesh& mesh{ m_meshes.at(static_cast<std::size_t>(CUBE)) };
+            // use icosphere mesh as point light gizmo
+            const Mesh& mesh{ m_meshes.at(static_cast<std::size_t>(ICOSPHERE)) };
 
             // set point light related pipeline state 
             {
