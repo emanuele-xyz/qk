@@ -1768,10 +1768,13 @@ namespace qk
 
             for (const SpotLight& spot_light : scene.spot_lights)
             {
-                constexpr int COUNT{ 2 };
+                // for each spot light we render three cones: umbra, penumbra and near
+                constexpr int COUNT{ 3 };
 
-                // umbra and penumbra angles in degress
-                float angles_deg[COUNT]{ spot_light.umbra_angle_deg, spot_light.penumbra_angle_deg };
+                // cones angles
+                // TODO: if we draw both umbra and penumbra cones, use the umbra cone angle as the near cone angle, 
+                // TODO: if we draw just one of the two cones, use as near cone angle the angle of the cone we are drawing
+                float angles_deg[COUNT]{ spot_light.umbra_angle_deg, spot_light.penumbra_angle_deg, spot_light.umbra_angle_deg };
 
                 // convert umbra and penumbra angles to radians
                 float angles_rad[COUNT]{};
@@ -1780,11 +1783,14 @@ namespace qk
                     angles_rad[i] = dx::XMConvertToRadians(angles_deg[i]);
                 }
 
-                // compute x and z scaling factors, one for the umbra cone and the other for the penumbra cone
+                // y scaling factors for each cone
+                float y_scales[COUNT]{ spot_light.r_max, spot_light.r_max, spot_light.r_min };
+
+                // compute x and z scaling factors for each cone
                 float xz_scales[COUNT]{};
                 for (int i{}; i < COUNT; i++)
                 {
-                    xz_scales[i] = 2.0f * spot_light.r_max * std::tan(angles_rad[i]);
+                    xz_scales[i] = 2.0f * y_scales[i] * std::tan(angles_rad[i]);
                 }
 
                 // render umbra and penumbra light volumes
@@ -1792,14 +1798,11 @@ namespace qk
                 {
                     // upload light volume object constants
                     {
-                        // compute scale y factor
-                        float sy{ spot_light.r_max };
-
                         // move cone local space origin to cone peak
                         Matrix translate_0{ Matrix::CreateTranslation(Vector3{ 0.0f, -0.5f, 0.0f }) };
                         // translate cone peak to specified position
                         Matrix translate_1{ Matrix::CreateTranslation(Vector3{ spot_light.position.elems }) };
-                        Matrix scale{ Matrix::CreateScale(Vector3{ xz_scales[i], sy, xz_scales[i]}) };
+                        Matrix scale{ Matrix::CreateScale(Vector3{ xz_scales[i], y_scales[i], xz_scales[i]})};
                         Matrix model{ translate_0 * scale * translate_1 };
 
                         d11::SubresourceMap map{ m_ctx, m_cb_object.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
