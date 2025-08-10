@@ -37,6 +37,17 @@ namespace qk
         float r_max{ 5.0f };
     };
 
+    struct SpotLight
+    {
+        v3 position{ 1.0f, 1.0f, 1.0f };
+        v3 direction{ 0.0f, -1.0f, 0.0f };
+        v3 color{ 1.0f, 1.0f, 1.0f };
+        float r_min{ 0.1f };
+        float r_max{ 5.0f };
+        float umbra_angle_deg{ 45.0f };
+        float penumbra_angle_deg{ 30.0f };
+    };
+
     struct Object
     {
         v3 position{};
@@ -54,6 +65,7 @@ namespace qk
         Camera camera{};
         DirectionalLight directional_light{};
         std::vector<PointLight> point_lights{};
+        std::vector<SpotLight> spot_lights{};
         std::vector<Object> objects{};
     };
 }

@@ -33,6 +33,14 @@ namespace qk_gui
             }
 
             {
+                qk::SpotLight spot_light{};
+
+                spot_light.position = qk::v3{ 0.0f, 3.0f, 0.0f };
+                spot_light.r_max = 3.0f;
+                m_scene.spot_lights.emplace_back(spot_light);
+            }
+
+            {
                 qk::Object object{};
 
                 object = qk::Object{};
@@ -171,6 +179,31 @@ namespace qk_gui
                                 ImGui::ColorEdit3("Color", point_light.color.elems);
                                 ImGui::DragFloat("Min Radius", &point_light.r_min, 0.01f, 0.01f, 1000.0f);
                                 ImGui::DragFloat("Max Radius", &point_light.r_max, 0.01f, 0.01f, 1000.0f);
+                            }
+                        }
+                        ImGui::PopID();
+                    }
+                    ImGui::EndTabItem();
+                }
+                if (ImGui::BeginTabItem("Spot Lights"))
+                {
+                    for (std::size_t i{}; i < m_scene.spot_lights.size(); i++)
+                    {
+                        qk::SpotLight& spot_light{ m_scene.spot_lights[i] };
+
+                        ImGui::PushID(static_cast<int>(i));
+                        {
+                            std::string label{ std::format("Spot Light {}", i) };
+                            ImGuiTreeNodeFlags tree_node_flags{ ImGuiTreeNodeFlags_DefaultOpen };
+                            if (ImGui::CollapsingHeader(label.c_str(), tree_node_flags))
+                            {
+                                ImGui::DragFloat3("Position", spot_light.position.elems, 0.01f);
+                                ImGui::DragFloat3("Direction", spot_light.direction.elems, 0.01f);
+                                ImGui::ColorEdit3("Color", spot_light.color.elems);
+                                ImGui::DragFloat("Min Radius", &spot_light.r_min, 0.01f, 0.01f, 1000.0f);
+                                ImGui::DragFloat("Max Radius", &spot_light.r_max, 0.01f, 0.01f, 1000.0f);
+                                ImGui::DragFloat("Umbra (deg)", &spot_light.umbra_angle_deg, 0.1f, 0.0f, 89.0f);
+                                ImGui::DragFloat("Penumbra (deg)", &spot_light.penumbra_angle_deg, 0.1f, 0.0f, 89.0f);
                             }
                         }
                         ImGui::PopID();
