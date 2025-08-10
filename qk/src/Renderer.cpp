@@ -1768,34 +1768,49 @@ namespace qk
 
             for (const SpotLight& spot_light : scene.spot_lights)
             {
-                // upload light volume object constants
+                constexpr int COUNT{ 2 };
+
+                // umbra and penumbra angles in degress
+                float angles_deg[COUNT]{ spot_light.umbra_angle_deg, spot_light.penumbra_angle_deg };
+
+                // convert umbra and penumbra angles to radians
+                float angles_rad[COUNT]{};
+                for (int i{}; i < COUNT; i++)
                 {
-                    // compute scale x and z factors
-                    float sx{}, sz{};
-                    {
-                        float umbra_angle_rad{ dx::XMConvertToRadians(spot_light.umbra_angle_deg) };
-                        float v{ 2.0f * spot_light.r_max * std::tan(umbra_angle_rad) };
-                        sx = sz = v;
-                    }
-
-                    // compute scale y factors
-                    float sy{ spot_light.r_max };
-
-                    // move cone local space origin to cone peak
-                    Matrix translate_0{ Matrix::CreateTranslation(Vector3{ 0.0f, -0.5f, 0.0f }) };
-                    // translate cone peak to specified position
-                    Matrix translate_1{ Matrix::CreateTranslation(Vector3{ spot_light.position.elems }) };
-                    Matrix scale{ Matrix::CreateScale(Vector3{ sx, sy, sz }) };
-                    Matrix model{ translate_0 * scale * translate_1 };
-
-                    d11::SubresourceMap map{ m_ctx, m_cb_object.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
-                    auto constants{ static_cast<GizmoPassObjectConstants*>(map.Data()) };
-                    constants->model = model;
-                    constants->color = Vector3{ spot_light.color.elems };
+                    angles_rad[i] = dx::XMConvertToRadians(angles_deg[i]);
                 }
 
-                // draw gizmo
-                m_ctx->DrawIndexed(mesh.IndexCount(), 0, 0);
+                // compute x and z scaling factors, one for the umbra cone and the other for the penumbra cone
+                float xz_scales[COUNT]{};
+                for (int i{}; i < COUNT; i++)
+                {
+                    xz_scales[i] = 2.0f * spot_light.r_max * std::tan(angles_rad[i]);
+                }
+
+                // render umbra and penumbra light volumes
+                for (int i{}; i < COUNT; i++)
+                {
+                    // upload light volume object constants
+                    {
+                        // compute scale y factor
+                        float sy{ spot_light.r_max };
+
+                        // move cone local space origin to cone peak
+                        Matrix translate_0{ Matrix::CreateTranslation(Vector3{ 0.0f, -0.5f, 0.0f }) };
+                        // translate cone peak to specified position
+                        Matrix translate_1{ Matrix::CreateTranslation(Vector3{ spot_light.position.elems }) };
+                        Matrix scale{ Matrix::CreateScale(Vector3{ xz_scales[i], sy, xz_scales[i]}) };
+                        Matrix model{ translate_0 * scale * translate_1 };
+
+                        d11::SubresourceMap map{ m_ctx, m_cb_object.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
+                        auto constants{ static_cast<GizmoPassObjectConstants*>(map.Data()) };
+                        constants->model = model;
+                        constants->color = Vector3{ spot_light.color.elems };
+                    }
+
+                    // draw umbra light gizmo
+                    m_ctx->DrawIndexed(mesh.IndexCount(), 0, 0);
+                }
             }
         }
     }
