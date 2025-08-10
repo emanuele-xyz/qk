@@ -1803,8 +1803,37 @@ namespace qk
                         Matrix translate_0{ Matrix::CreateTranslation(Vector3{ 0.0f, -0.5f, 0.0f }) };
                         // translate cone peak to specified position
                         Matrix translate_1{ Matrix::CreateTranslation(Vector3{ spot_light.position.elems }) };
-                        Matrix scale{ Matrix::CreateScale(Vector3{ xz_scales[i], y_scales[i], xz_scales[i]})};
-                        Matrix model{ translate_0 * scale * translate_1 };
+                        Matrix rotate{};
+                        // TODO: yoyo, the rotation is actually the reverse wtf
+                        {
+                            Vector3 direction{ spot_light.direction.elems };
+                            direction.Normalize();
+                            Vector3 down{ 0.0f, -1.0f, 0.0f }; // local space cone's direction 
+
+                            // check wheter direction and down have the same direction
+                            float dot{ direction.Dot(down) };
+                            if (dot == 1.0f) // they do; no need to rotate
+                            {
+                                // do nothing
+                            }
+                            else if (dot == -1.0f) // they don't but the cross won't work since they are linearly dependent
+                            {
+                                // TODO: do something plz
+                            }
+                            else // they are not linearly dependent, we can do the cross product all right
+                            {
+                                // compute rotation axis for rotating down into direction
+                                Vector3 axis{ direction.Cross(down) };
+
+                                // compute rotation angle for rotating down into direction
+                                float angle{ std::acos(dot) };
+
+                                // compute rotation matrix
+                                rotate = Matrix::CreateFromAxisAngle(axis, angle);
+                            }
+                        }
+                        Matrix scale{ Matrix::CreateScale(Vector3{ xz_scales[i], y_scales[i], xz_scales[i]}) };
+                        Matrix model{ translate_0 * scale * rotate * translate_1 };
 
                         d11::SubresourceMap map{ m_ctx, m_cb_object.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
                         auto constants{ static_cast<GizmoPassObjectConstants*>(map.Data()) };

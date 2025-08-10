@@ -65,16 +65,16 @@ float4 main(VSOutput input) : SV_TARGET
         shaded += lambert(l, n, c_light, albedo);
     }
     
-    // Labert for the spot lights
+    // Lambert for the spot lights
     #if 0
     for (int i = 0; i < cb_scene.spot_lights_count; i++)
     {
         OpaquePassSpotLight spot_light = sb_spot_lights[i];
-        float3 d = point_light.world_position - input.world_position;
+        
+        float3 d = spot_light.world_position - input.world_position;
         float r = length(d);
         float3 l = d / r;
         shaded += (l, n, c_)
-
     }
     #endif
     
