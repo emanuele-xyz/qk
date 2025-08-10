@@ -23,6 +23,7 @@ namespace qk
     constexpr MeshID QUAD{ 1 };
     constexpr MeshID ICOSPHERE{ 2 };
     constexpr MeshID CONE{ 3 };
+    constexpr MeshID CONE_NO_BASE{ 4 };
 
     struct MeshVertex
     {
