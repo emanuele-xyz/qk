@@ -32,4 +32,15 @@ struct OpaquePassPointLight
     float r_max;
 };
 
+struct OpaquePassSpotLight
+{
+    float3 position;
+    float3 direction;
+    float3 color;
+    float r_min;
+    float r_max;
+    float umbra_deg;
+    float penumbra_deg;
+};
+
 #endif

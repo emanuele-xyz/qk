@@ -9,30 +9,29 @@ float3 lambert(float3 l, float3 n, float3 c_light, float3 c_surface)
 }
 
 /*
-    Point light distance windowing function
-    r: distance between the shaded point and the light source
-    r_max: maximum distance the light affects
+    Windowing function
 */
-float f_win(float r, float r_max)
+float f_win(float x, float x_max)
 {
-    float r_over_r_max = r / r_max;
-    float r_over_r_max_fourth = pow(r_over_r_max, 4);
-    float clamped = max(0, 1 - r_over_r_max_fourth);
-    return clamped * clamped;
+    float x_over_x_max = x / x_max;
+    float x_over_x_max_fourth = pow(x_over_x_max, 4);
+    float clamped = max(0, 1 - x_over_x_max_fourth);
+    float clamped_squared = clamped * clamped;
+    return clamped_squared;
 }
 
 /*
-    Compute the light's color based on distance
+    Light distance falloff function
     r: distance between the shaded point and the light source
     r_min: radius of the physical object emitting the light
-    c_light_0: c_light at distance r_0
+    r_max: maximum distance between the shaded point and the light source
 */
-float3 c_light(float r, float r_min, float r_max, float r_0, float3 c_light_0)
+float f_dist(float r, float r_min, float r_max)
 {
     r = max(r, r_min);
-    float r_0_over_r = r_0 / r;
-    float r_0_over_r_squared = r_0_over_r * r_0_over_r;
-    return c_light_0 * f_win(r, r_max) * r_0_over_r_squared;
+    float one_over_r = 1 / r;
+    float one_over_r_squared = one_over_r * one_over_r;
+    return f_win(r, r_max) * one_over_r_squared;
 }
 
 float4 main(VSOutput input) : SV_TARGET
@@ -46,7 +45,7 @@ float4 main(VSOutput input) : SV_TARGET
     
     float3 n = normalize(input.world_normal);
     
-    float3 shaded = float3(0, 0,  0);
+    float3 shaded = float3(0, 0, 0);
     
     // Lambert for the directional light
     {
@@ -55,17 +54,29 @@ float4 main(VSOutput input) : SV_TARGET
     }
 
     // Lambert for the point lights
+    for (int i = 0; i < cb_scene.point_lights_count; i++)
     {
-        for (int i = 0; i < cb_scene.point_lights_count; i++)
-        {
-            OpaquePassPointLight point_light = sb_point_lights[i];
+        OpaquePassPointLight point_light = sb_point_lights[i];
             
-            float3 d = point_light.world_position - input.world_position;
-            float r = length(d);
-            float3 l = d / r;
-            shaded += lambert(l, n, c_light(r, point_light.r_min, point_light.r_max, 1, point_light.color), albedo);
-        }
+        float3 d = point_light.world_position - input.world_position;
+        float r = length(d);
+        float3 l = d / r;
+        float3 c_light = point_light.color * f_dist(r, point_light.r_min, point_light.r_max);
+        shaded += lambert(l, n, c_light, albedo);
     }
+    
+    // Labert for the spot lights
+    #if 0
+    for (int i = 0; i < cb_scene.spot_lights_count; i++)
+    {
+        OpaquePassSpotLight spot_light = sb_spot_lights[i];
+        float3 d = point_light.world_position - input.world_position;
+        float r = length(d);
+        float3 l = d / r;
+        shaded += (l, n, c_)
+
+    }
+    #endif
     
     return float4(shaded, 1.0);
 }

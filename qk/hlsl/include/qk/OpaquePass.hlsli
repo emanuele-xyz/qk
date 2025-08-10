@@ -33,5 +33,6 @@ SamplerState albedo_sampler : register(s0);
 Texture2D albedo_texture : register(t0);
 
 StructuredBuffer<OpaquePassPointLight> sb_point_lights : register(t1);
+StructuredBuffer<OpaquePassSpotLight> sb_spot_lights : register(t2);
 
 #endif
