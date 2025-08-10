@@ -1475,6 +1475,7 @@ namespace qk
         }
 
         // upload point lights
+        if (m_sb_point_lights)
         {
             d11::SubresourceMap map{ m_ctx, m_sb_point_lights.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
             auto constants{ static_cast<OpaquePassPointLight*>(map.Data()) };

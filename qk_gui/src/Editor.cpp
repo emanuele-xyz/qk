@@ -26,10 +26,10 @@ namespace qk_gui
                 qk::PointLight point_light{};
 
                 point_light.position = qk::v3{ 1.0f, 1.0f, 1.0f };
-                m_scene.point_lights.emplace_back(point_light);
+                //m_scene.point_lights.emplace_back(point_light);
 
                 point_light.position = qk::v3{ -1.0f, +1.0f, -1.0f };
-                m_scene.point_lights.emplace_back(point_light);
+                //m_scene.point_lights.emplace_back(point_light);
             }
 
             {
