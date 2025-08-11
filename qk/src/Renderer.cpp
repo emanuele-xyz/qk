@@ -1804,7 +1804,6 @@ namespace qk
                         // translate cone peak to specified position
                         Matrix translate_1{ Matrix::CreateTranslation(Vector3{ spot_light.position.elems }) };
                         Matrix rotate{};
-                        // TODO: yoyo, the rotation is actually the reverse wtf
                         {
                             Vector3 direction{ spot_light.direction.elems };
                             direction.Normalize();
