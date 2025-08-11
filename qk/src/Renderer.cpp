@@ -1860,7 +1860,7 @@ namespace qk
                         constants->color = Vector3{ spot_light.color.elems };
                     }
 
-                    // draw umbra light gizmo
+                    // draw gizmo
                     m_ctx->DrawIndexed(mesh.IndexCount(), 0, 0);
                 }
             }
