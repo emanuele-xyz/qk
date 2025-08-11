@@ -1318,6 +1318,8 @@ namespace qk
         wrl::ComPtr<ID3D11Buffer> m_cb_object;
         wrl::ComPtr<ID3D11Buffer> m_sb_point_lights;
         wrl::ComPtr<ID3D11ShaderResourceView> m_srv_point_lights;
+        wrl::ComPtr<ID3D11Buffer> m_sb_spot_lights;
+        wrl::ComPtr<ID3D11ShaderResourceView> m_srv_spot_lights;
     };
     OpaquePass::OpaquePass(ID3D11Device* dev, ID3D11DeviceContext* ctx, const std::vector<Mesh>& meshes, const std::vector<Texture>& textures)
         : m_dev{ dev }
@@ -1333,6 +1335,8 @@ namespace qk
         , m_cb_object{}
         , m_sb_point_lights{}
         , m_srv_point_lights{}
+        , m_sb_spot_lights{}
+        , m_srv_spot_lights{}
     {
         #include <qk/hlsl/OpaquePassVS.h>
         #include <qk/hlsl/OpaquePassPS.h>
@@ -1440,6 +1444,33 @@ namespace qk
             }
         }
 
+        // resize spot lights structured buffer if necessary
+        {
+            D3D11_BUFFER_DESC desc{};
+            desc.ByteWidth = 0;
+            desc.Usage = D3D11_USAGE_DYNAMIC;
+            desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+            desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+            desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+            desc.StructureByteStride = sizeof(OpaquePassSpotLight);
+
+            if (m_sb_spot_lights)
+            {
+                m_sb_spot_lights->GetDesc(&desc);
+            }
+
+            UINT expected_size_in_bytes{ static_cast<UINT>(scene.spot_lights.size() * sizeof(OpaquePassSpotLight)) };
+            if (desc.ByteWidth != expected_size_in_bytes)
+            {
+                desc.ByteWidth = expected_size_in_bytes;
+
+                // buffer
+                qk_CheckHR(m_dev->CreateBuffer(&desc, nullptr, m_sb_spot_lights.ReleaseAndGetAddressOf()));
+                // srv
+                qk_CheckHR(m_dev->CreateShaderResourceView(m_sb_spot_lights.Get(), nullptr, m_srv_spot_lights.ReleaseAndGetAddressOf()));
+            }
+        }
+
         // set new viewport data
         m_viewport.Width = static_cast<float>(w);
         m_viewport.Height = static_cast<float>(h);
@@ -1472,6 +1503,7 @@ namespace qk
             constants->view = view;
             constants->projection = projection;
             constants->point_lights_count = static_cast<std::int32_t>(scene.point_lights.size());
+            constants->spot_lights_count = static_cast<std::int32_t>(scene.spot_lights.size());
         }
 
         // upload point lights
@@ -1488,6 +1520,26 @@ namespace qk
                 constants[i].color = Vector3{ point_light.color.elems };
                 constants[i].r_min = point_light.r_min;
                 constants[i].r_max = point_light.r_max;
+            }
+        }
+
+        // upload spot lights
+        if (m_sb_spot_lights)
+        {
+            d11::SubresourceMap map{ m_ctx, m_sb_spot_lights.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
+            auto constants{ static_cast<OpaquePassSpotLight*>(map.Data()) };
+
+            for (std::size_t i{}; i < scene.spot_lights.size(); i++)
+            {
+                const SpotLight& spot_light{ scene.spot_lights[i] };
+
+                constants[i].world_position = Vector3{ spot_light.position.elems };
+                constants[i].direction = Vector3{ spot_light.direction.elems };
+                constants[i].color = Vector3{ spot_light.color.elems };
+                constants[i].r_min = spot_light.r_min;
+                constants[i].r_max = spot_light.r_max;
+                constants[i].umbra_rad = dx::XMConvertToRadians(spot_light.umbra_angle_deg);
+                constants[i].penumbra_rad = dx::XMConvertToRadians(spot_light.penumbra_angle_deg);
             }
         }
 
@@ -1534,7 +1586,7 @@ namespace qk
 
                 // prepare texture related data for pipeline state
                 ID3D11SamplerState* sss[]{ m_texture_ss.Get() };
-                ID3D11ShaderResourceView* srvs[]{ albedo.SRV(), m_srv_point_lights.Get() };
+                ID3D11ShaderResourceView* srvs[]{ albedo.SRV(), m_srv_point_lights.Get(), m_srv_spot_lights.Get() };
 
                 // set pipeline state
                 m_ctx->IASetIndexBuffer(mesh.Indices(), MESH_INDEX_FORMAT, 0);
