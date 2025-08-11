@@ -1816,14 +1816,33 @@ namespace qk
                             {
                                 // do nothing
                             }
-                            else if (dot == -1.0f) // they don't but the cross won't work since they are linearly dependent
-                            {
-                                // TODO: do something plz
-                            }
-                            else // they are not linearly dependent, we can do the cross product all right
+                            else // they don't 
                             {
                                 // compute rotation axis for rotating down into direction
-                                Vector3 axis{ direction.Cross(down) };
+                                Vector3 axis{};
+                                if (dot == -1.0f) // direction and down have opposite directions; corss won't work
+                                {
+                                    // as rotation axis we pick any vector orthogonal to direction
+                                    if (direction.x == 0.0f)
+                                    {
+                                        axis.y = -direction.z;
+                                        axis.z = direction.y;
+                                    }
+                                    else if (direction.y == 0.0f)
+                                    {
+                                        axis.x = -direction.z;
+                                        axis.z = direction.x;
+                                    }
+                                    else
+                                    {
+                                        axis.x = -direction.y;
+                                        axis.y = direction.x;
+                                    }
+                                }
+                                else // cross will work
+                                {
+                                    axis = down.Cross(direction);
+                                }
 
                                 // compute rotation angle for rotating down into direction
                                 float angle{ std::acos(dot) };
