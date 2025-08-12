@@ -55,3 +55,23 @@ Punctual lights:
 - let `t = clamp((cos theta_s - cos theta_u) / (cos theta_p - cos theta_u), 0, 1)`
 - `f_dir(r) = smothstep(t)`
 
+### Other Light Types
+
+- Capsule lights use as light source a segment. For each shaded point, the direction to the closest point on the segment is used as the ligt direction `l`.
+- Area lights are light sources with size and shape. They illuminate surface points from multiple directions.
+- There are two cathegories of area light tecnhiques.
+- Those that soften the edges of stahdows, resulting from the area light being partially occluded.
+- Those that simulate the effect of the area light on surface shading.
+
+## Implementing Shading Models
+
+### Material Systems
+
+- Material: all the data used to describe the appearance of a surface.
+- Idea: implement a material LOD model: for each LOD, possibly use a different material.
+- The idea is to use simpler versions of the base material, the further away the object is from the camera.
+
+## Aliasing and Antialiasing
+
+### Sampling and Filtering Theory
+
