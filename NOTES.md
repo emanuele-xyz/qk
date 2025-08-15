@@ -32,7 +32,7 @@ Punctual lights:
 - `c_light_0` is the value of `c_light` at distance `r_0`.
 - To avoid a divide by zero Unreal uses, `c_light(r) = c_light_0 * r_0^2 / (r^2 + epsylon)` with `epsylon = 1cm`.
 - CryEngine and Frostbite use `c_light(r) = c_light_0 * (r_0 / max(r, r_min))^2`.
-- `r_min` is the radius of the physical object emitting the light. 
+- `r_min` is the radius of the physical object emitting the light.
 - For efficient rendering, the light's intensity should reach zero at some finite distance (useful for culling).
 - To avoid sharp cutoffs, it would be advisable for the intensity and its derivative to reach zero at the same distance.
 - We multiply the inverse square equation by a windowing function `f_win(r)`.
@@ -71,7 +71,30 @@ Punctual lights:
 - Idea: implement a material LOD model: for each LOD, possibly use a different material.
 - The idea is to use simpler versions of the base material, the further away the object is from the camera.
 
-## Aliasing and Antialiasing
+## Transparency, Alpha and Compositing
 
-### Sampling and Filtering Theory
+- Screen-door transparency: discard some pixels based on a checker pattern. (Order independent, All objects are opaque) (Too limited)
+- Stochastic transparency: uses subpixel screen-door masks. (Noisy, needs a lot of samples to look good)
+- Blending the transparent object's color with the color of the object behind using alpha blending.
+- A pixel's alpha may represent either opacity, coverage of samples, or both, depending on the circumstances.
 
+### Blending Order
+
+- Transparent objects are rendered on top of the existing scene with an alpha of less then 1.
+- We blend a fragment's value with the corresponding color in the color buffer using the over operator.
+- `c_o = alpha_s * c_s + (1 - alpha_s) * c_d`.
+- `c_s` is the color of the transparent object, the source.
+- `alpha_s` is the transparent object's alpha.
+- `c_d` is the pixel color before blending, the destination.
+- `c_o` is the pixel color after  blending.
+
+- There is also additive blending.
+- `c_o = alpha_s * c_s + c_d`.
+
+- To render transparent objects we need to draw them after the opaque ones.
+- After rendering the opaque objects, we render the transparent ones with the over operator.
+- Using the over operator, we need to render transparent objects back to front.
+- Objects that interpenetrate cause artifacts.
+- It is usually best to turn off writes to the depth buffer when performing transparency.
+- In this way, all transparent objects will appear in some form, instead of flickering when their draw order changes.
+- We may also render each transparent mesh twice, one draw for the back-faces and another for the front-faces.
