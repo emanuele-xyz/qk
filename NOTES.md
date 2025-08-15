@@ -98,3 +98,8 @@ Punctual lights:
 - It is usually best to turn off writes to the depth buffer when performing transparency.
 - In this way, all transparent objects will appear in some form, instead of flickering when their draw order changes.
 - We may also render each transparent mesh twice, one draw for the back-faces and another for the front-faces.
+
+- If we want to render front to back, we use the under operator.
+- `c_o = alpha_d * c_d + (1 - alpha_d) * alpha_s * c_s`.
+- `alpha_o = alpha_s * (1 - alpha_d) + alpha_d = alpha_s - alpha_s * alpha_d + alpha_d`.
+- The formula for computing alpha is order independent.
