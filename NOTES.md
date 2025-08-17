@@ -103,3 +103,26 @@ Punctual lights:
 - `c_o = alpha_d * c_d + (1 - alpha_d) * alpha_s * c_s`.
 - `alpha_o = alpha_s * (1 - alpha_d) + alpha_d = alpha_s - alpha_s * alpha_d + alpha_d`.
 - The formula for computing alpha is order independent.
+
+- The under operator is used by rendering all transparent objects to a separate buffer and then merging it with the main color buffer.
+
+### Order independent Transparency
+
+- The under operator is used for the order-independent transparency (OIT) algorithm known as depth peeling.
+- Order independent = No sorting.
+- Another OIT technique is the A-buffer: liked lists of fragments, for every pixel.
+- Another OIT technique is multi-layer alpha blending.
+- Weighted sum and weighted average are OIT techniques using a single pass. Problem: the order of the objects is not taken into account. Works well for highly transparent surfaces and particles.
+- Weighted average is usually preferred.
+- `c_sum = sum for i=1..n of alpha_i * c_i`. Result of the color buffer used for rendering only transparent surfaces.
+- `alpha_sum = sum for i=1..n of alpha_i`. Result of the alpha buffer used for rendering only transparent surfaces.
+- `c_wavg = c_sum / alpha_sum`. Weighted average transparency color.
+- `alpha_avg = alpha_sum / n`. Average of all alpha values.
+- `u = (1 - alpha_avg)^n`. Estimated visibility of the destination (the opaque scene) after this average alpha is applied `n` times, for `n` transparent surfaces.
+- `c_o = (1-u) * c_wavg + u * c_d`. This is the over operator with `1-u` being the source's alpha.
+- `n` is the number of transparent objects.
+- `c_i` and `alpha_i`represent the ser of transparency values.
+- `c_d` is the color of the opaque portion of the scene.
+- Weighted average, for identical alphas, blends all colors equally, regardless of order.
+- Weighted blended OIT was introduced to give a more convincing result. The distance to the surface also affects the weight, with closer surfaces being given more influence. `u` is also computed by multiplying together the terms `1-alpha_i` together and subtracting from one, giving the true alpha coverage of the set of surfaces.
+- McGuire and Mara extend this method.
