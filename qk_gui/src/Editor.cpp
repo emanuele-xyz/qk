@@ -86,9 +86,9 @@ namespace qk_gui
         // update camera
         {
             // camera mouse look logic
-            if (m_mouse.ButtonState(Button::Left))
+            if (m_mouse.ButtonState(Button::Right))
             {
-                m_camera.AddPitch(m_mouse.CursorDY() * CAMERA_LOOK_SPEED * dt);
+                m_camera.AddPitch(-m_mouse.CursorDY() * CAMERA_LOOK_SPEED * dt);
                 m_camera.AddYaw(m_mouse.CursorDX() * CAMERA_LOOK_SPEED * dt);
             }
 
