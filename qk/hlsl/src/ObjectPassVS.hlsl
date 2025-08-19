@@ -1,4 +1,4 @@
-#include <qk/OpaquePass.hlsli>
+#include <qk/ObjectPass.hlsli>
 
 VSOutput main(VSInput input)
 {

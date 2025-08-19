@@ -31,4 +31,6 @@ namespace qk::d11
         UINT m_subres_idx;
         D3D11_MAPPED_SUBRESOURCE m_mapped_subres;
     };
+
+    // TODO: create helper classes for constant buffers and structured buffers
 }

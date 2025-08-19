@@ -19,8 +19,8 @@ namespace qk_gui
     {
         // TODO: to be removed
         {
-            m_scene.directional_light.color = qk::v3{};
-            m_scene.directional_light.direction = qk::v3{};
+            m_scene.directional_light.color = qk::v3{ 0.5f, 0.5f, 0.5f };
+            m_scene.directional_light.direction = qk::v3{ 0.0f, -1.0f, 0.0f };
 
             {
                 qk::PointLight point_light{};

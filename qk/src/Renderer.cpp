@@ -12,7 +12,7 @@ namespace dx = DirectX; // for DirectX namespace included by DirectXMath (includ
 #define int std::int32_t
 #define matrix Matrix
 #define float3 Vector3
-#include <qk/hlsl/OpaquePassBuffers.h>
+#include <qk/hlsl/ObjectPassBuffers.h>
 #include <qk/hlsl/GizmoPassBuffers.h>
 #undef float3
 #undef matrix
@@ -1292,72 +1292,53 @@ namespace qk
         qk_CheckHR(dev->CreateShaderResourceView(m_texture.Get(), nullptr, m_srv.ReleaseAndGetAddressOf()));
     }
 
-    class OpaquePass
+    class OpaqueObjectSubpass
     {
     public:
-        OpaquePass(ID3D11Device* dev, ID3D11DeviceContext* ctx, const std::vector<Mesh>& meshes, const std::vector<Texture>& textures);
-        ~OpaquePass() = default;
-        OpaquePass(const OpaquePass&) = delete;
-        OpaquePass(OpaquePass&&) noexcept = delete;
-        OpaquePass& operator=(const OpaquePass&) = delete;
-        OpaquePass& operator=(OpaquePass&&) noexcept = delete;
+        OpaqueObjectSubpass(ID3D11Device* dev, ID3D11DeviceContext* ctx, const std::vector<Mesh>& meshes, const std::vector<Texture>& textures);
+        ~OpaqueObjectSubpass() = default;
+        OpaqueObjectSubpass(const OpaqueObjectSubpass&) = delete;
+        OpaqueObjectSubpass(const OpaqueObjectSubpass&&) noexcept = delete;
+        OpaqueObjectSubpass& operator=(const OpaqueObjectSubpass&) = delete;
+        OpaqueObjectSubpass& operator=(OpaqueObjectSubpass&&) noexcept = delete;
     public:
-        void Render(int w, int h, ID3D11RenderTargetView* rtv, ID3D11DepthStencilView* dsv, const Scene& scene);
+        void Render(ID3D11RenderTargetView* rtv, ID3D11DepthStencilView* dsv, const D3D11_VIEWPORT& viewport, const Scene& scene);
+    public:
+        ID3D11VertexShader* vs;
+        ID3D11PixelShader* ps;
+        ID3D11InputLayout* il;
+        ID3D11SamplerState* texture_ss;
+        ID3D11Buffer* cb_scene;
+        ID3D11Buffer* cb_object;
+        ID3D11Buffer* sb_point_lights;
+        ID3D11ShaderResourceView* srv_point_lights;
+        ID3D11Buffer* sb_spot_lights;
+        ID3D11ShaderResourceView* srv_spot_lights;
     private:
         ID3D11Device* m_dev;
         ID3D11DeviceContext* m_ctx;
         const std::vector<Mesh>& m_meshes;
         const std::vector<Texture>& m_textures;
-        D3D11_VIEWPORT m_viewport;
-        wrl::ComPtr<ID3D11VertexShader> m_vs;
-        wrl::ComPtr<ID3D11PixelShader> m_ps;
-        wrl::ComPtr<ID3D11InputLayout> m_il;
         wrl::ComPtr<ID3D11RasterizerState> m_rs;
-        wrl::ComPtr<ID3D11SamplerState> m_texture_ss;
-        wrl::ComPtr<ID3D11Buffer> m_cb_scene;
-        wrl::ComPtr<ID3D11Buffer> m_cb_object;
-        wrl::ComPtr<ID3D11Buffer> m_sb_point_lights;
-        wrl::ComPtr<ID3D11ShaderResourceView> m_srv_point_lights;
-        wrl::ComPtr<ID3D11Buffer> m_sb_spot_lights;
-        wrl::ComPtr<ID3D11ShaderResourceView> m_srv_spot_lights;
     };
-    OpaquePass::OpaquePass(ID3D11Device* dev, ID3D11DeviceContext* ctx, const std::vector<Mesh>& meshes, const std::vector<Texture>& textures)
+
+    OpaqueObjectSubpass::OpaqueObjectSubpass(ID3D11Device* dev, ID3D11DeviceContext* ctx, const std::vector<Mesh>& meshes, const std::vector<Texture>& textures)
         : m_dev{ dev }
         , m_ctx{ ctx }
         , m_meshes{ meshes }
         , m_textures{ textures }
-        , m_viewport{ .TopLeftX = 0.0f, .TopLeftY = 0.0f, .MinDepth = 0.0f, .MaxDepth = 1.0f }
-        , m_vs{}
-        , m_ps{}
-        , m_il{}
         , m_rs{}
-        , m_cb_scene{}
-        , m_cb_object{}
-        , m_sb_point_lights{}
-        , m_srv_point_lights{}
-        , m_sb_spot_lights{}
-        , m_srv_spot_lights{}
+        , vs{}
+        , ps{}
+        , il{}
+        , texture_ss{}
+        , cb_scene{}
+        , cb_object{}
+        , sb_point_lights{}
+        , srv_point_lights{}
+        , sb_spot_lights{}
+        , srv_spot_lights{}
     {
-        #include <qk/hlsl/OpaquePassVS.h>
-        #include <qk/hlsl/OpaquePassPS.h>
-
-        // vertex shader
-        qk_CheckHR(m_dev->CreateVertexShader(OpaquePassVS_bytes, sizeof(OpaquePassVS_bytes), nullptr, m_vs.ReleaseAndGetAddressOf()));
-
-        // pixel shader
-        qk_CheckHR(m_dev->CreatePixelShader(OpaquePassPS_bytes, sizeof(OpaquePassPS_bytes), nullptr, m_ps.ReleaseAndGetAddressOf()));
-
-        // input layout
-        {
-            D3D11_INPUT_ELEMENT_DESC desc[] =
-            {
-                { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-                { "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-                { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-            };
-            qk_CheckHR(m_dev->CreateInputLayout(desc, std::size(desc), OpaquePassVS_bytes, sizeof(OpaquePassVS_bytes), m_il.ReleaseAndGetAddressOf()));
-        }
-
         // rasterizer state
         {
             D3D11_RASTERIZER_DESC desc{};
@@ -1373,174 +1354,23 @@ namespace qk
             desc.AntialiasedLineEnable = false;
             qk_CheckHR(m_dev->CreateRasterizerState(&desc, m_rs.ReleaseAndGetAddressOf()));
         }
-
-        // sampler state
-        {
-            D3D11_SAMPLER_DESC desc{};
-            desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-            desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-            desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-            desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-            //desc.MaxAnisotropy = ;
-            desc.BorderColor[0] = 0.0f;
-            desc.BorderColor[1] = 0.0f;
-            desc.BorderColor[2] = 0.0f;
-            desc.BorderColor[3] = 0.0f;
-            desc.MinLOD = 0;
-            desc.MaxLOD = D3D11_FLOAT32_MAX;
-            qk_CheckHR(m_dev->CreateSamplerState(&desc, m_texture_ss.ReleaseAndGetAddressOf()));
-        }
-
-        // scene constant buffer
-        {
-            D3D11_BUFFER_DESC desc{};
-            desc.ByteWidth = sizeof(OpaquePassSceneConstants);
-            desc.Usage = D3D11_USAGE_DYNAMIC;
-            desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-            desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-            desc.MiscFlags = 0;
-            desc.StructureByteStride = 0;
-            qk_CheckHR(m_dev->CreateBuffer(&desc, nullptr, m_cb_scene.ReleaseAndGetAddressOf()));
-        }
-
-        // object constant buffer
-        {
-            D3D11_BUFFER_DESC desc{};
-            desc.ByteWidth = sizeof(OpaquePassObjectConstants);
-            desc.Usage = D3D11_USAGE_DYNAMIC;
-            desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-            desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-            desc.MiscFlags = 0;
-            desc.StructureByteStride = 0;
-            qk_CheckHR(m_dev->CreateBuffer(&desc, nullptr, m_cb_object.ReleaseAndGetAddressOf()));
-        }
     }
-    void OpaquePass::Render(int w, int h, ID3D11RenderTargetView* rtv, ID3D11DepthStencilView* dsv, const Scene& scene)
+    void OpaqueObjectSubpass::Render(ID3D11RenderTargetView* rtv, ID3D11DepthStencilView* dsv, const D3D11_VIEWPORT& viewport, const Scene& scene)
     {
-        // resize point lights structured buffer if necessary
-        {
-            D3D11_BUFFER_DESC desc{};
-            desc.ByteWidth = 0;
-            desc.Usage = D3D11_USAGE_DYNAMIC;
-            desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-            desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-            desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-            desc.StructureByteStride = sizeof(OpaquePassPointLight);
-
-            if (m_sb_point_lights)
-            {
-                m_sb_point_lights->GetDesc(&desc);
-            }
-
-            UINT expected_size_in_bytes{ static_cast<UINT>(scene.point_lights.size() * sizeof(OpaquePassPointLight)) };
-            if (desc.ByteWidth != expected_size_in_bytes)
-            {
-                desc.ByteWidth = expected_size_in_bytes;
-
-                // buffer
-                qk_CheckHR(m_dev->CreateBuffer(&desc, nullptr, m_sb_point_lights.ReleaseAndGetAddressOf()));
-                // srv
-                qk_CheckHR(m_dev->CreateShaderResourceView(m_sb_point_lights.Get(), nullptr, m_srv_point_lights.ReleaseAndGetAddressOf()));
-            }
-        }
-
-        // resize spot lights structured buffer if necessary
-        {
-            D3D11_BUFFER_DESC desc{};
-            desc.ByteWidth = 0;
-            desc.Usage = D3D11_USAGE_DYNAMIC;
-            desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-            desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-            desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-            desc.StructureByteStride = sizeof(OpaquePassSpotLight);
-
-            if (m_sb_spot_lights)
-            {
-                m_sb_spot_lights->GetDesc(&desc);
-            }
-
-            UINT expected_size_in_bytes{ static_cast<UINT>(scene.spot_lights.size() * sizeof(OpaquePassSpotLight)) };
-            if (desc.ByteWidth != expected_size_in_bytes)
-            {
-                desc.ByteWidth = expected_size_in_bytes;
-
-                // buffer
-                qk_CheckHR(m_dev->CreateBuffer(&desc, nullptr, m_sb_spot_lights.ReleaseAndGetAddressOf()));
-                // srv
-                qk_CheckHR(m_dev->CreateShaderResourceView(m_sb_spot_lights.Get(), nullptr, m_srv_spot_lights.ReleaseAndGetAddressOf()));
-            }
-        }
-
-        // set new viewport data
-        m_viewport.Width = static_cast<float>(w);
-        m_viewport.Height = static_cast<float>(h);
-
         // prepare pipeline for drawing
         {
-            ID3D11Buffer* cbufs[]{ m_cb_scene.Get(), m_cb_object.Get() };
+            ID3D11Buffer* cbufs[]{ cb_scene, cb_object };
 
             m_ctx->ClearState();
             m_ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-            m_ctx->IASetInputLayout(m_il.Get());
-            m_ctx->VSSetShader(m_vs.Get(), nullptr, 0);
+            m_ctx->IASetInputLayout(il);
+            m_ctx->VSSetShader(vs, nullptr, 0);
             m_ctx->VSSetConstantBuffers(0, std::size(cbufs), cbufs);
-            m_ctx->PSSetShader(m_ps.Get(), nullptr, 0);
+            m_ctx->PSSetShader(ps, nullptr, 0);
             m_ctx->PSSetConstantBuffers(0, std::size(cbufs), cbufs);
             m_ctx->RSSetState(m_rs.Get());
-            m_ctx->RSSetViewports(1, &m_viewport);
+            m_ctx->RSSetViewports(1, &viewport);
             m_ctx->OMSetRenderTargets(1, &rtv, dsv);
-        }
-
-        // upload scene constants
-        {
-            float aspect{ m_viewport.Width / m_viewport.Height };
-            float fov_rad{ DirectX::XMConvertToRadians(scene.camera.fov_deg) };
-            Matrix view{ Matrix::CreateLookAt(Vector3{ scene.camera.eye.elems }, Vector3{ scene.camera.target.elems }, Vector3{ scene.camera.up.elems }) };
-            Matrix projection{ Matrix::CreatePerspectiveFieldOfView(fov_rad, aspect, scene.camera.near_plane, scene.camera.far_plane) };
-
-            d11::SubresourceMap map{ m_ctx, m_cb_scene.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
-            auto constants{ static_cast<OpaquePassSceneConstants*>(map.Data()) };
-            constants->view = view;
-            constants->projection = projection;
-            constants->point_lights_count = static_cast<std::int32_t>(scene.point_lights.size());
-            constants->spot_lights_count = static_cast<std::int32_t>(scene.spot_lights.size());
-        }
-
-        // upload point lights
-        if (m_sb_point_lights)
-        {
-            d11::SubresourceMap map{ m_ctx, m_sb_point_lights.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
-            auto constants{ static_cast<OpaquePassPointLight*>(map.Data()) };
-
-            for (std::size_t i{}; i < scene.point_lights.size(); i++)
-            {
-                const PointLight& point_light{ scene.point_lights[i] };
-
-                constants[i].world_position = Vector3{ point_light.position.elems };
-                constants[i].color = Vector3{ point_light.color.elems };
-                constants[i].r_min = point_light.r_min;
-                constants[i].r_max = point_light.r_max;
-            }
-        }
-
-        // upload spot lights
-        if (m_sb_spot_lights)
-        {
-            d11::SubresourceMap map{ m_ctx, m_sb_spot_lights.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
-            auto constants{ static_cast<OpaquePassSpotLight*>(map.Data()) };
-
-            for (std::size_t i{}; i < scene.spot_lights.size(); i++)
-            {
-                const SpotLight& spot_light{ scene.spot_lights[i] };
-
-                constants[i].world_position = Vector3{ spot_light.position.elems };
-                constants[i].direction = Vector3{ spot_light.direction.elems };
-                constants[i].color = Vector3{ spot_light.color.elems };
-                constants[i].r_min = spot_light.r_min;
-                constants[i].r_max = spot_light.r_max;
-                constants[i].umbra_rad = dx::XMConvertToRadians(spot_light.umbra_angle_deg);
-                constants[i].penumbra_rad = dx::XMConvertToRadians(spot_light.penumbra_angle_deg);
-            }
         }
 
         // loop over each object node and render it
@@ -1561,8 +1391,8 @@ namespace qk
                 normal.Invert();
                 normal.Transpose();
 
-                d11::SubresourceMap map{ m_ctx, m_cb_object.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
-                auto constants{ static_cast<OpaquePassObjectConstants*>(map.Data()) };
+                d11::SubresourceMap map{ m_ctx, cb_object, 0, D3D11_MAP_WRITE_DISCARD, 0 };
+                auto constants{ static_cast<ObjectPassObjectConstants*>(map.Data()) };
                 constants->model = model;
                 constants->normal = normal;
                 constants->albedo_color = Vector3{ object.albedo_color.elems };
@@ -1585,8 +1415,8 @@ namespace qk
                 UINT vertex_offset{};
 
                 // prepare texture related data for pipeline state
-                ID3D11SamplerState* sss[]{ m_texture_ss.Get() };
-                ID3D11ShaderResourceView* srvs[]{ albedo.SRV(), m_srv_point_lights.Get(), m_srv_spot_lights.Get() };
+                ID3D11SamplerState* sss[]{ texture_ss };
+                ID3D11ShaderResourceView* srvs[]{ albedo.SRV(), srv_point_lights, srv_spot_lights };
 
                 // set pipeline state
                 m_ctx->IASetIndexBuffer(mesh.Indices(), MESH_INDEX_FORMAT, 0);
@@ -1598,6 +1428,269 @@ namespace qk
                 m_ctx->DrawIndexed(mesh.IndexCount(), 0, 0);
             }
         }
+    }
+
+    class TransparentObjectSubpass
+    {
+    public:
+        TransparentObjectSubpass();
+        ~TransparentObjectSubpass() = default;
+        TransparentObjectSubpass(const TransparentObjectSubpass&) = delete;
+        TransparentObjectSubpass(TransparentObjectSubpass&&) noexcept = delete;
+        TransparentObjectSubpass& operator=(const TransparentObjectSubpass&) = delete;
+        TransparentObjectSubpass& operator=(TransparentObjectSubpass&&) noexcept = delete;
+    public:
+        void Render(ID3D11RenderTargetView* rtv, ID3D11DepthStencilView* dsv, const D3D11_VIEWPORT& viewport, const Scene& scene);
+    private:
+    };
+
+    TransparentObjectSubpass::TransparentObjectSubpass()
+    {
+        // TODO: to be implemented
+    }
+    void TransparentObjectSubpass::Render(ID3D11RenderTargetView* /*rtv*/, ID3D11DepthStencilView* /*dsv*/, const D3D11_VIEWPORT& /*viewport*/, const Scene& /*scene*/)
+    {
+        // TODO: to be implemented
+    }
+
+    class ObjectPass
+    {
+    public:
+        ObjectPass(ID3D11Device* dev, ID3D11DeviceContext* ctx, const std::vector<Mesh>& meshes, const std::vector<Texture>& textures);
+        ~ObjectPass() = default;
+        ObjectPass(const ObjectPass&) = delete;
+        ObjectPass(ObjectPass&&) noexcept = delete;
+        ObjectPass& operator=(const ObjectPass&) = delete;
+        ObjectPass& operator=(ObjectPass&&) noexcept = delete;
+    public:
+        void Render(int w, int h, ID3D11RenderTargetView* rtv, ID3D11DepthStencilView* dsv, const Scene& scene);
+    private:
+        ID3D11Device* m_dev;
+        ID3D11DeviceContext* m_ctx;
+        const std::vector<Mesh>& m_meshes;
+        const std::vector<Texture>& m_textures;
+        D3D11_VIEWPORT m_viewport;
+        wrl::ComPtr<ID3D11VertexShader> m_vs;
+        wrl::ComPtr<ID3D11PixelShader> m_ps;
+        wrl::ComPtr<ID3D11InputLayout> m_il;
+        wrl::ComPtr<ID3D11SamplerState> m_texture_ss;
+        wrl::ComPtr<ID3D11Buffer> m_cb_scene;
+        wrl::ComPtr<ID3D11Buffer> m_cb_object;
+        wrl::ComPtr<ID3D11Buffer> m_sb_point_lights;
+        wrl::ComPtr<ID3D11ShaderResourceView> m_srv_point_lights;
+        wrl::ComPtr<ID3D11Buffer> m_sb_spot_lights;
+        wrl::ComPtr<ID3D11ShaderResourceView> m_srv_spot_lights;
+        OpaqueObjectSubpass m_opaque_object_subpass;
+        TransparentObjectSubpass m_transparent_object_subpass;
+    };
+    ObjectPass::ObjectPass(ID3D11Device* dev, ID3D11DeviceContext* ctx, const std::vector<Mesh>& meshes, const std::vector<Texture>& textures)
+        : m_dev{ dev }
+        , m_ctx{ ctx }
+        , m_meshes{ meshes }
+        , m_textures{ textures }
+        , m_viewport{ .TopLeftX = 0.0f, .TopLeftY = 0.0f, .MinDepth = 0.0f, .MaxDepth = 1.0f }
+        , m_vs{}
+        , m_ps{}
+        , m_il{}
+        , m_cb_scene{}
+        , m_cb_object{}
+        , m_sb_point_lights{}
+        , m_srv_point_lights{}
+        , m_sb_spot_lights{}
+        , m_srv_spot_lights{}
+        , m_opaque_object_subpass{ dev, ctx, m_meshes, m_textures }
+        , m_transparent_object_subpass{}
+    {
+        #include <qk/hlsl/ObjectPassVS.h>
+        #include <qk/hlsl/ObjectPassPS.h>
+
+        // vertex shader
+        qk_CheckHR(m_dev->CreateVertexShader(ObjectPassVS_bytes, sizeof(ObjectPassVS_bytes), nullptr, m_vs.ReleaseAndGetAddressOf()));
+
+        // pixel shader
+        qk_CheckHR(m_dev->CreatePixelShader(ObjectPassPS_bytes, sizeof(ObjectPassPS_bytes), nullptr, m_ps.ReleaseAndGetAddressOf()));
+
+        // input layout
+        {
+            D3D11_INPUT_ELEMENT_DESC desc[] =
+            {
+                { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+                { "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+                { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+            };
+            qk_CheckHR(m_dev->CreateInputLayout(desc, std::size(desc), ObjectPassVS_bytes, sizeof(ObjectPassVS_bytes), m_il.ReleaseAndGetAddressOf()));
+        }
+
+        // sampler state
+        {
+            D3D11_SAMPLER_DESC desc{};
+            desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+            desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+            desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+            desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+            //desc.MaxAnisotropy = ;
+            desc.BorderColor[0] = 0.0f;
+            desc.BorderColor[1] = 0.0f;
+            desc.BorderColor[2] = 0.0f;
+            desc.BorderColor[3] = 0.0f;
+            desc.MinLOD = 0;
+            desc.MaxLOD = D3D11_FLOAT32_MAX;
+            qk_CheckHR(m_dev->CreateSamplerState(&desc, m_texture_ss.ReleaseAndGetAddressOf()));
+        }
+
+        // scene constant buffer
+        {
+            D3D11_BUFFER_DESC desc{};
+            desc.ByteWidth = sizeof(ObjectPassSceneConstants);
+            desc.Usage = D3D11_USAGE_DYNAMIC;
+            desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+            desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+            desc.MiscFlags = 0;
+            desc.StructureByteStride = 0;
+            qk_CheckHR(m_dev->CreateBuffer(&desc, nullptr, m_cb_scene.ReleaseAndGetAddressOf()));
+        }
+
+        // object constant buffer
+        {
+            D3D11_BUFFER_DESC desc{};
+            desc.ByteWidth = sizeof(ObjectPassObjectConstants);
+            desc.Usage = D3D11_USAGE_DYNAMIC;
+            desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+            desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+            desc.MiscFlags = 0;
+            desc.StructureByteStride = 0;
+            qk_CheckHR(m_dev->CreateBuffer(&desc, nullptr, m_cb_object.ReleaseAndGetAddressOf()));
+        }
+    }
+    void ObjectPass::Render(int w, int h, ID3D11RenderTargetView* rtv, ID3D11DepthStencilView* dsv, const Scene& scene)
+    {
+        // upload scene constants
+        {
+            float aspect{ m_viewport.Width / m_viewport.Height };
+            float fov_rad{ DirectX::XMConvertToRadians(scene.camera.fov_deg) };
+            Matrix view{ Matrix::CreateLookAt(Vector3{ scene.camera.eye.elems }, Vector3{ scene.camera.target.elems }, Vector3{ scene.camera.up.elems }) };
+            Matrix projection{ Matrix::CreatePerspectiveFieldOfView(fov_rad, aspect, scene.camera.near_plane, scene.camera.far_plane) };
+
+            d11::SubresourceMap map{ m_ctx, m_cb_scene.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
+            auto constants{ static_cast<ObjectPassSceneConstants*>(map.Data()) };
+            constants->view = view;
+            constants->projection = projection;
+            constants->point_lights_count = static_cast<std::int32_t>(scene.point_lights.size());
+            constants->spot_lights_count = static_cast<std::int32_t>(scene.spot_lights.size());
+        }
+
+        // resize point lights structured buffer if necessary
+        {
+            D3D11_BUFFER_DESC desc{};
+            desc.ByteWidth = 0;
+            desc.Usage = D3D11_USAGE_DYNAMIC;
+            desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+            desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+            desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+            desc.StructureByteStride = sizeof(ObjectPassPointLight);
+
+            if (m_sb_point_lights)
+            {
+                m_sb_point_lights->GetDesc(&desc);
+            }
+
+            UINT expected_size_in_bytes{ static_cast<UINT>(scene.point_lights.size() * sizeof(ObjectPassPointLight)) };
+            if (desc.ByteWidth != expected_size_in_bytes)
+            {
+                desc.ByteWidth = expected_size_in_bytes;
+
+                // buffer
+                qk_CheckHR(m_dev->CreateBuffer(&desc, nullptr, m_sb_point_lights.ReleaseAndGetAddressOf()));
+                // srv
+                qk_CheckHR(m_dev->CreateShaderResourceView(m_sb_point_lights.Get(), nullptr, m_srv_point_lights.ReleaseAndGetAddressOf()));
+            }
+        }
+
+        // upload point lights
+        if (m_sb_point_lights)
+        {
+            d11::SubresourceMap map{ m_ctx, m_sb_point_lights.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
+            auto constants{ static_cast<ObjectPassPointLight*>(map.Data()) };
+
+            for (std::size_t i{}; i < scene.point_lights.size(); i++)
+            {
+                const PointLight& point_light{ scene.point_lights[i] };
+
+                constants[i].world_position = Vector3{ point_light.position.elems };
+                constants[i].color = Vector3{ point_light.color.elems };
+                constants[i].r_min = point_light.r_min;
+                constants[i].r_max = point_light.r_max;
+            }
+        }
+
+        // resize spot lights structured buffer if necessary
+        {
+            D3D11_BUFFER_DESC desc{};
+            desc.ByteWidth = 0;
+            desc.Usage = D3D11_USAGE_DYNAMIC;
+            desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+            desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+            desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+            desc.StructureByteStride = sizeof(ObjectPassSpotLight);
+
+            if (m_sb_spot_lights)
+            {
+                m_sb_spot_lights->GetDesc(&desc);
+            }
+
+            UINT expected_size_in_bytes{ static_cast<UINT>(scene.spot_lights.size() * sizeof(ObjectPassSpotLight)) };
+            if (desc.ByteWidth != expected_size_in_bytes)
+            {
+                desc.ByteWidth = expected_size_in_bytes;
+
+                // buffer
+                qk_CheckHR(m_dev->CreateBuffer(&desc, nullptr, m_sb_spot_lights.ReleaseAndGetAddressOf()));
+                // srv
+                qk_CheckHR(m_dev->CreateShaderResourceView(m_sb_spot_lights.Get(), nullptr, m_srv_spot_lights.ReleaseAndGetAddressOf()));
+            }
+        }
+
+        // upload spot lights
+        if (m_sb_spot_lights)
+        {
+            d11::SubresourceMap map{ m_ctx, m_sb_spot_lights.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
+            auto constants{ static_cast<ObjectPassSpotLight*>(map.Data()) };
+
+            for (std::size_t i{}; i < scene.spot_lights.size(); i++)
+            {
+                const SpotLight& spot_light{ scene.spot_lights[i] };
+
+                constants[i].world_position = Vector3{ spot_light.position.elems };
+                constants[i].direction = Vector3{ spot_light.direction.elems };
+                constants[i].color = Vector3{ spot_light.color.elems };
+                constants[i].r_min = spot_light.r_min;
+                constants[i].r_max = spot_light.r_max;
+                constants[i].umbra_rad = dx::XMConvertToRadians(spot_light.umbra_angle_deg);
+                constants[i].penumbra_rad = dx::XMConvertToRadians(spot_light.penumbra_angle_deg);
+            }
+        }
+
+        // set new viewport data
+        m_viewport.Width = static_cast<float>(w);
+        m_viewport.Height = static_cast<float>(h);
+
+        // update opaque objects subpass state
+        m_opaque_object_subpass.vs = m_vs.Get();
+        m_opaque_object_subpass.ps = m_ps.Get();
+        m_opaque_object_subpass.il = m_il.Get();
+        m_opaque_object_subpass.texture_ss = m_texture_ss.Get();
+        m_opaque_object_subpass.cb_scene = m_cb_scene.Get();
+        m_opaque_object_subpass.cb_object = m_cb_object.Get();
+        m_opaque_object_subpass.sb_point_lights = m_sb_point_lights.Get();
+        m_opaque_object_subpass.srv_point_lights = m_srv_point_lights.Get();
+        m_opaque_object_subpass.sb_spot_lights = m_sb_spot_lights.Get();
+        m_opaque_object_subpass.srv_spot_lights = m_srv_spot_lights.Get();
+
+        // run opaque objects subpass
+        m_opaque_object_subpass.Render(rtv, dsv, m_viewport, scene);
+
+        // run transparent objects subpass
+        m_transparent_object_subpass.Render(rtv, dsv, m_viewport, scene);
     }
 
     class GizmoPass
@@ -1936,7 +2029,7 @@ namespace qk
         std::vector<Texture> m_textures;
         wrl::ComPtr<ID3D11Texture2D> m_depth_stencil_buffer;
         wrl::ComPtr<ID3D11DepthStencilView> m_dsv;
-        OpaquePass m_opaque_pass;
+        ObjectPass m_opaque_pass;
         GizmoPass m_gizmo_pass;
     };
 

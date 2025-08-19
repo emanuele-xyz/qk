@@ -1,7 +1,7 @@
-#ifndef __QK_OPAQUE_PASS__
-#define __QK_OPAQUE_PASS__
+#ifndef __QK_OBJECT_PASS__
+#define __QK_OBJECT_PASS__
 
-#include <qk/OpaquePassBuffers.hlsli>
+#include <qk/ObjectPassBuffers.hlsli>
 
 struct VSInput
 {
@@ -20,19 +20,19 @@ struct VSOutput
 
 cbuffer CBScene : register(b0)
 {
-    OpaquePassSceneConstants cb_scene;
+    ObjectPassSceneConstants cb_scene;
 };
 
 cbuffer CBObject : register(b1)
 {
-    OpaquePassObjectConstants cb_object;
+    ObjectPassObjectConstants cb_object;
 };
 
 SamplerState albedo_sampler : register(s0);
 
 Texture2D albedo_texture : register(t0);
 
-StructuredBuffer<OpaquePassPointLight> sb_point_lights : register(t1);
-StructuredBuffer<OpaquePassSpotLight> sb_spot_lights : register(t2);
+StructuredBuffer<ObjectPassPointLight> sb_point_lights : register(t1);
+StructuredBuffer<ObjectPassSpotLight> sb_spot_lights : register(t2);
 
 #endif

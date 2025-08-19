@@ -1,4 +1,4 @@
-#include <qk/OpaquePass.hlsli>
+#include <qk/ObjectPass.hlsli>
 
 /*
     Lambert's illumination model
@@ -75,7 +75,7 @@ float4 main(VSOutput input) : SV_TARGET
     {
         for (int i = 0; i < cb_scene.point_lights_count; i++)
         {
-            OpaquePassPointLight point_light = sb_point_lights[i];
+            ObjectPassPointLight point_light = sb_point_lights[i];
             
             float3 d = point_light.world_position - input.world_position;
             float r = length(d);
@@ -94,7 +94,7 @@ float4 main(VSOutput input) : SV_TARGET
     {
         for (int i = 0; i < cb_scene.spot_lights_count; i++)
         {
-            OpaquePassSpotLight spot_light = sb_spot_lights[i];
+            ObjectPassSpotLight spot_light = sb_spot_lights[i];
         
             float3 d = spot_light.world_position - input.world_position;
             float r = length(d);

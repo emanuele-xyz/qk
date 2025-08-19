@@ -1,7 +1,7 @@
-#ifndef __QK_OPAQUE_PASS_BUFFERS__
-#define __QK_OPAQUE_PASS_BUFFERS__
+#ifndef __QK_OBJECT_PASS_BUFFERS__
+#define __QK_OBJECT_PASS_BUFFERS__
 
-struct OpaquePassSceneConstants
+struct ObjectPassSceneConstants
 {
     matrix view;
     matrix projection;
@@ -10,7 +10,7 @@ struct OpaquePassSceneConstants
     float _pad[2];
 };
 
-struct OpaquePassObjectConstants
+struct ObjectPassObjectConstants
 {
     matrix model;
     matrix normal;
@@ -25,7 +25,7 @@ struct OpaquePassObjectConstants
     } directional_light;
 };
 
-struct OpaquePassPointLight
+struct ObjectPassPointLight
 {
     float3 world_position;
     float3 color;
@@ -33,7 +33,7 @@ struct OpaquePassPointLight
     float r_max;
 };
 
-struct OpaquePassSpotLight
+struct ObjectPassSpotLight
 {
     float3 world_position;
     float3 direction;
