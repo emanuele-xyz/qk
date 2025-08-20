@@ -1307,6 +1307,7 @@ namespace qk
         ID3D11VertexShader* vs;
         ID3D11PixelShader* ps;
         ID3D11InputLayout* il;
+        ID3D11RasterizerState* rs;
         ID3D11SamplerState* texture_ss;
         ID3D11Buffer* cb_scene;
         ID3D11Buffer* cb_object;
@@ -1319,7 +1320,6 @@ namespace qk
         ID3D11DeviceContext* m_ctx;
         const std::vector<Mesh>& m_meshes;
         const std::vector<Texture>& m_textures;
-        wrl::ComPtr<ID3D11RasterizerState> m_rs;
     };
 
     OpaqueObjectSubpass::OpaqueObjectSubpass(ID3D11Device* dev, ID3D11DeviceContext* ctx, const std::vector<Mesh>& meshes, const std::vector<Texture>& textures)
@@ -1327,10 +1327,10 @@ namespace qk
         , m_ctx{ ctx }
         , m_meshes{ meshes }
         , m_textures{ textures }
-        , m_rs{}
         , vs{}
         , ps{}
         , il{}
+        , rs{}
         , texture_ss{}
         , cb_scene{}
         , cb_object{}
@@ -1339,21 +1339,6 @@ namespace qk
         , sb_spot_lights{}
         , srv_spot_lights{}
     {
-        // rasterizer state
-        {
-            D3D11_RASTERIZER_DESC desc{};
-            desc.FillMode = D3D11_FILL_SOLID;
-            desc.CullMode = D3D11_CULL_BACK;
-            desc.FrontCounterClockwise = true;
-            desc.DepthBias = 0;
-            desc.DepthBiasClamp = 0.0f;
-            desc.SlopeScaledDepthBias = 0.0f;
-            desc.DepthClipEnable = true;
-            desc.ScissorEnable = false;
-            desc.MultisampleEnable = false;
-            desc.AntialiasedLineEnable = false;
-            qk_CheckHR(m_dev->CreateRasterizerState(&desc, m_rs.ReleaseAndGetAddressOf()));
-        }
     }
     void OpaqueObjectSubpass::Render(ID3D11RenderTargetView* rtv, ID3D11DepthStencilView* dsv, const D3D11_VIEWPORT& viewport, const Scene& scene)
     {
@@ -1368,7 +1353,7 @@ namespace qk
             m_ctx->VSSetConstantBuffers(0, std::size(cbufs), cbufs);
             m_ctx->PSSetShader(ps, nullptr, 0);
             m_ctx->PSSetConstantBuffers(0, std::size(cbufs), cbufs);
-            m_ctx->RSSetState(m_rs.Get());
+            m_ctx->RSSetState(rs);
             m_ctx->RSSetViewports(1, &viewport);
             m_ctx->OMSetRenderTargets(1, &rtv, dsv);
         }
@@ -1473,6 +1458,7 @@ namespace qk
         wrl::ComPtr<ID3D11VertexShader> m_vs;
         wrl::ComPtr<ID3D11PixelShader> m_ps;
         wrl::ComPtr<ID3D11InputLayout> m_il;
+        wrl::ComPtr<ID3D11RasterizerState> m_rs;
         wrl::ComPtr<ID3D11SamplerState> m_texture_ss;
         wrl::ComPtr<ID3D11Buffer> m_cb_scene;
         wrl::ComPtr<ID3D11Buffer> m_cb_object;
@@ -1492,6 +1478,7 @@ namespace qk
         , m_vs{}
         , m_ps{}
         , m_il{}
+        , m_rs{}
         , m_cb_scene{}
         , m_cb_object{}
         , m_sb_point_lights{}
@@ -1519,6 +1506,22 @@ namespace qk
                 { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
             };
             qk_CheckHR(m_dev->CreateInputLayout(desc, std::size(desc), ObjectPassVS_bytes, sizeof(ObjectPassVS_bytes), m_il.ReleaseAndGetAddressOf()));
+        }
+
+        // rasterizer state
+        {
+            D3D11_RASTERIZER_DESC desc{};
+            desc.FillMode = D3D11_FILL_SOLID;
+            desc.CullMode = D3D11_CULL_BACK;
+            desc.FrontCounterClockwise = true;
+            desc.DepthBias = 0;
+            desc.DepthBiasClamp = 0.0f;
+            desc.SlopeScaledDepthBias = 0.0f;
+            desc.DepthClipEnable = true;
+            desc.ScissorEnable = false;
+            desc.MultisampleEnable = false;
+            desc.AntialiasedLineEnable = false;
+            qk_CheckHR(m_dev->CreateRasterizerState(&desc, m_rs.ReleaseAndGetAddressOf()));
         }
 
         // sampler state
@@ -1678,6 +1681,7 @@ namespace qk
         m_opaque_object_subpass.vs = m_vs.Get();
         m_opaque_object_subpass.ps = m_ps.Get();
         m_opaque_object_subpass.il = m_il.Get();
+        m_opaque_object_subpass.rs = m_rs.Get();
         m_opaque_object_subpass.texture_ss = m_texture_ss.Get();
         m_opaque_object_subpass.cb_scene = m_cb_scene.Get();
         m_opaque_object_subpass.cb_object = m_cb_object.Get();
