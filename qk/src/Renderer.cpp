@@ -1451,6 +1451,7 @@ namespace qk
         const std::vector<Mesh>& m_meshes;
         const std::vector<Texture>& m_textures;
         wrl::ComPtr<ID3D11BlendState> m_bs;
+        wrl::ComPtr<ID3D11DepthStencilState> m_dss;
     };
 
     TransparentObjectSubpass::TransparentObjectSubpass(ID3D11Device* dev, ID3D11DeviceContext* ctx, const std::vector<Mesh>& meshes, const std::vector<Texture>& textures)
@@ -1459,6 +1460,7 @@ namespace qk
         , m_meshes{ meshes }
         , m_textures{ textures }
         , m_bs{}
+        , m_dss{}
         , vs{}
         , ps{}
         , il{}
@@ -1471,6 +1473,8 @@ namespace qk
         , sb_spot_lights{}
         , srv_spot_lights{}
     {
+        // TODO: define rasterizer state that doesn't do backface culling!
+
         // blend state implementing the 'over' operator
         {
             D3D11_BLEND_DESC desc{};
@@ -1487,7 +1491,14 @@ namespace qk
             qk_CheckHR(m_dev->CreateBlendState(&desc, m_bs.ReleaseAndGetAddressOf()));
         }
 
-        // TODO: create depth stencil state that disables depth writes
+        // depth stencil state (perform depth testing but disable writes to the depth buffer)
+        {
+            D3D11_DEPTH_STENCIL_DESC desc{};
+            desc.DepthEnable = true;
+            desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO; // turn off writes
+            desc.DepthFunc = D3D11_COMPARISON_LESS;
+            qk_CheckHR(m_dev->CreateDepthStencilState(&desc, m_dss.ReleaseAndGetAddressOf()));
+        }
     }
     void TransparentObjectSubpass::Render(ID3D11RenderTargetView* rtv, ID3D11DepthStencilView* dsv, const D3D11_VIEWPORT& viewport, const Scene& scene)
     {
@@ -1505,10 +1516,11 @@ namespace qk
             m_ctx->RSSetState(rs);
             m_ctx->RSSetViewports(1, &viewport);
             m_ctx->OMSetRenderTargets(1, &rtv, dsv);
+            m_ctx->OMSetDepthStencilState(m_dss.Get(), 0);
             m_ctx->OMSetBlendState(m_bs.Get(), nullptr, 0XFFFFFFFF);
         }
 
-        // TODO: created back to front sorted list of non opaque and non fully transparent objects
+        // TODO: create back to front sorted list of non opaque and non fully transparent objects
 
         // loop over each object node and render it
         for (const Object& object : scene.objects)
