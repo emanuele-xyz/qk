@@ -16,7 +16,7 @@ namespace qk
     struct Camera
     {
         v3 eye{};
-        v3 target{ 0.0f, 1.0f, +5.0f };
+        v3 target{ 0.0f, 1.0f, +10.0f };
         v3 up{ 0.0f, 1.0f, 0.0f };
         float fov_deg{ 45.0f };
         float near_plane{ 0.01f };
@@ -57,6 +57,7 @@ namespace qk
         float albedo_mix{}; // 0 for color, 1 for texture
         v3 albedo_color{ 1.0f, 1.0f, 1.0f };
         TextureID albedo_id{ ALBEDO_BLACK };
+        float opacity{ 1.0f }; // 0 for fully transparent, 1 for fully opaque
     };
 
     struct Scene

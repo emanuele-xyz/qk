@@ -1361,6 +1361,12 @@ namespace qk
         // loop over each object node and render it
         for (const Object& object : scene.objects)
         {
+            // if the object is not fully opauqe, skip it
+            if (object.opacity != 1.0f)
+            {
+                continue;
+            }
+
             // compute object's model and normal matrices, then upload them to the GPU
             {
                 Vector3 rotation_rad{};
@@ -1382,6 +1388,7 @@ namespace qk
                 constants->normal = normal;
                 constants->albedo_color = Vector3{ object.albedo_color.elems };
                 constants->albedo_mix = object.albedo_mix;
+                constants->opacity = object.opacity;
                 constants->directional_light.direction = Vector3{ scene.directional_light.direction.elems };
                 constants->directional_light.color = Vector3{ scene.directional_light.color.elems };
             }
@@ -1418,7 +1425,7 @@ namespace qk
     class TransparentObjectSubpass
     {
     public:
-        TransparentObjectSubpass();
+        TransparentObjectSubpass(ID3D11Device* dev, ID3D11DeviceContext* ctx, const std::vector<Mesh>& meshes, const std::vector<Texture>& textures);
         ~TransparentObjectSubpass() = default;
         TransparentObjectSubpass(const TransparentObjectSubpass&) = delete;
         TransparentObjectSubpass(TransparentObjectSubpass&&) noexcept = delete;
@@ -1426,16 +1433,145 @@ namespace qk
         TransparentObjectSubpass& operator=(TransparentObjectSubpass&&) noexcept = delete;
     public:
         void Render(ID3D11RenderTargetView* rtv, ID3D11DepthStencilView* dsv, const D3D11_VIEWPORT& viewport, const Scene& scene);
+    public:
+        ID3D11VertexShader* vs;
+        ID3D11PixelShader* ps;
+        ID3D11InputLayout* il;
+        ID3D11RasterizerState* rs;
+        ID3D11SamplerState* texture_ss;
+        ID3D11Buffer* cb_scene;
+        ID3D11Buffer* cb_object;
+        ID3D11Buffer* sb_point_lights;
+        ID3D11ShaderResourceView* srv_point_lights;
+        ID3D11Buffer* sb_spot_lights;
+        ID3D11ShaderResourceView* srv_spot_lights;
     private:
+        ID3D11Device* m_dev;
+        ID3D11DeviceContext* m_ctx;
+        const std::vector<Mesh>& m_meshes;
+        const std::vector<Texture>& m_textures;
+        wrl::ComPtr<ID3D11BlendState> m_bs;
     };
 
-    TransparentObjectSubpass::TransparentObjectSubpass()
+    TransparentObjectSubpass::TransparentObjectSubpass(ID3D11Device* dev, ID3D11DeviceContext* ctx, const std::vector<Mesh>& meshes, const std::vector<Texture>& textures)
+        : m_dev{ dev }
+        , m_ctx{ ctx }
+        , m_meshes{ meshes }
+        , m_textures{ textures }
+        , m_bs{}
+        , vs{}
+        , ps{}
+        , il{}
+        , rs{}
+        , texture_ss{}
+        , cb_scene{}
+        , cb_object{}
+        , sb_point_lights{}
+        , srv_point_lights{}
+        , sb_spot_lights{}
+        , srv_spot_lights{}
     {
-        // TODO: to be implemented
+        // blend state implementing the 'over' operator
+        {
+            D3D11_BLEND_DESC desc{};
+            desc.AlphaToCoverageEnable = false;
+            desc.IndependentBlendEnable = false;
+            desc.RenderTarget[0].BlendEnable = true;
+            desc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+            desc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+            desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+            desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ZERO;
+            desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
+            desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+            desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+            qk_CheckHR(m_dev->CreateBlendState(&desc, m_bs.ReleaseAndGetAddressOf()));
+        }
+
+        // TODO: create depth stencil state that disables depth writes
     }
-    void TransparentObjectSubpass::Render(ID3D11RenderTargetView* /*rtv*/, ID3D11DepthStencilView* /*dsv*/, const D3D11_VIEWPORT& /*viewport*/, const Scene& /*scene*/)
+    void TransparentObjectSubpass::Render(ID3D11RenderTargetView* rtv, ID3D11DepthStencilView* dsv, const D3D11_VIEWPORT& viewport, const Scene& scene)
     {
-        // TODO: to be implemented
+        // prepare pipeline for drawing
+        {
+            ID3D11Buffer* cbufs[]{ cb_scene, cb_object };
+
+            m_ctx->ClearState();
+            m_ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+            m_ctx->IASetInputLayout(il);
+            m_ctx->VSSetShader(vs, nullptr, 0);
+            m_ctx->VSSetConstantBuffers(0, std::size(cbufs), cbufs);
+            m_ctx->PSSetShader(ps, nullptr, 0);
+            m_ctx->PSSetConstantBuffers(0, std::size(cbufs), cbufs);
+            m_ctx->RSSetState(rs);
+            m_ctx->RSSetViewports(1, &viewport);
+            m_ctx->OMSetRenderTargets(1, &rtv, dsv);
+            m_ctx->OMSetBlendState(m_bs.Get(), nullptr, 0XFFFFFFFF);
+        }
+
+        // TODO: created back to front sorted list of non opaque and non fully transparent objects
+
+        // loop over each object node and render it
+        for (const Object& object : scene.objects)
+        {
+            // if either the object is fully opauqe or fully transparent, skip it
+            if (object.opacity == 1.0f || object.opacity == 0.0f)
+            {
+                continue;
+            }
+
+            // compute object's model and normal matrices, then upload them to the GPU
+            {
+                Vector3 rotation_rad{};
+                rotation_rad.x = DirectX::XMConvertToRadians(object.rotation.x());
+                rotation_rad.y = DirectX::XMConvertToRadians(object.rotation.y());
+                rotation_rad.z = DirectX::XMConvertToRadians(object.rotation.z());
+
+                Matrix translate{ Matrix::CreateTranslation(Vector3{ object.position.elems }) };
+                Matrix rotate{ Matrix::CreateFromYawPitchRoll(rotation_rad) };
+                Matrix scale{ Matrix::CreateScale(Vector3{ object.scaling.elems }) };
+                Matrix model{ scale * rotate * translate };
+                Matrix normal{ scale * rotate };
+                normal.Invert();
+                normal.Transpose();
+
+                d11::SubresourceMap map{ m_ctx, cb_object, 0, D3D11_MAP_WRITE_DISCARD, 0 };
+                auto constants{ static_cast<ObjectPassObjectConstants*>(map.Data()) };
+                constants->model = model;
+                constants->normal = normal;
+                constants->albedo_color = Vector3{ object.albedo_color.elems };
+                constants->albedo_mix = object.albedo_mix;
+                constants->opacity = object.opacity;
+                constants->directional_light.direction = Vector3{ scene.directional_light.direction.elems };
+                constants->directional_light.color = Vector3{ scene.directional_light.color.elems };
+            }
+
+            // set mesh related pipeline state and submit draw call
+            {
+                // fetch mesh
+                const Mesh& mesh{ m_meshes.at(static_cast<std::size_t>(object.mesh_id)) };
+
+                // fetch albedo
+                const Texture& albedo{ m_textures.at(static_cast<std::size_t>(object.albedo_id)) };
+
+                // prepare mesh related data for pipeline state
+                ID3D11Buffer* vertices{ mesh.Vertices() };
+                UINT vertex_stride{ sizeof(MeshVertex) };
+                UINT vertex_offset{};
+
+                // prepare texture related data for pipeline state
+                ID3D11SamplerState* sss[]{ texture_ss };
+                ID3D11ShaderResourceView* srvs[]{ albedo.SRV(), srv_point_lights, srv_spot_lights };
+
+                // set pipeline state
+                m_ctx->IASetIndexBuffer(mesh.Indices(), MESH_INDEX_FORMAT, 0);
+                m_ctx->IASetVertexBuffers(0, 1, &vertices, &vertex_stride, &vertex_offset);
+                m_ctx->PSSetSamplers(0, std::size(sss), sss);
+                m_ctx->PSSetShaderResources(0, std::size(srvs), srvs);
+
+                // draw
+                m_ctx->DrawIndexed(mesh.IndexCount(), 0, 0);
+            }
+        }
     }
 
     class ObjectPass
@@ -1486,7 +1622,7 @@ namespace qk
         , m_sb_spot_lights{}
         , m_srv_spot_lights{}
         , m_opaque_object_subpass{ dev, ctx, m_meshes, m_textures }
-        , m_transparent_object_subpass{}
+        , m_transparent_object_subpass{ dev, ctx, m_meshes, m_textures }
     {
         #include <qk/hlsl/ObjectPassVS.h>
         #include <qk/hlsl/ObjectPassPS.h>
@@ -1692,6 +1828,19 @@ namespace qk
 
         // run opaque objects subpass
         m_opaque_object_subpass.Render(rtv, dsv, m_viewport, scene);
+
+        // update transparent objects subpass state
+        m_transparent_object_subpass.vs = m_vs.Get();
+        m_transparent_object_subpass.ps = m_ps.Get();
+        m_transparent_object_subpass.il = m_il.Get();
+        m_transparent_object_subpass.rs = m_rs.Get();
+        m_transparent_object_subpass.texture_ss = m_texture_ss.Get();
+        m_transparent_object_subpass.cb_scene = m_cb_scene.Get();
+        m_transparent_object_subpass.cb_object = m_cb_object.Get();
+        m_transparent_object_subpass.sb_point_lights = m_sb_point_lights.Get();
+        m_transparent_object_subpass.srv_point_lights = m_srv_point_lights.Get();
+        m_transparent_object_subpass.sb_spot_lights = m_sb_spot_lights.Get();
+        m_transparent_object_subpass.srv_spot_lights = m_srv_spot_lights.Get();
 
         // run transparent objects subpass
         m_transparent_object_subpass.Render(rtv, dsv, m_viewport, scene);

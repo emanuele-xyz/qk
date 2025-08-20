@@ -234,6 +234,7 @@ namespace qk_gui
                                 ImGui::DragFloat("Albedo Mix", &object.albedo_mix, 0.001f, 0.0f, 1.0f);
                                 ImGui::ColorEdit3("Albedo Color", object.albedo_color.elems);
                                 ImGui::Text("Albedo ID: %d", object.albedo_id);
+                                ImGui::DragFloat("Opacity", &object.opacity, 0.01f, 0.0f, 1.0f);
 
                                 // TODO: use combo for mesh
                                 //const char* items[] = { "AAAA", "BBBB", "CCCC", "DDDD", "EEEE", "FFFF", "GGGG", "HHHH", "IIII", "JJJJ", "KKKK", "LLLLLLL", "MMMM", "OOOOOOO", "PPPP", "QQQQQQQQQQ", "RRR", "SSSS" };

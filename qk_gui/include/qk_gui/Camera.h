@@ -11,7 +11,7 @@ namespace qk_gui
         constexpr static float MIN_PITCH{ -89.0f };
         constexpr static float MAX_PITCH{ +89.0f };
         constexpr static Vector3 UP{ 0.0f, 1.0f, 0.0f };
-        constexpr static Vector3 START_POSITION{ 0.0f, 1.0f, 5.0f };
+        constexpr static Vector3 START_POSITION{ 0.0f, 1.0f, 10.0f };
     public:
         Camera() : m_position{ START_POSITION }, m_pitch{}, m_yaw{ START_YAW } {}
     public:

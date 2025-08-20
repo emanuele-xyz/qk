@@ -16,6 +16,8 @@ struct ObjectPassObjectConstants
     matrix normal;
     float3 albedo_color;
     float albedo_mix;
+    float opacity;
+    float3 _pad;
     struct
     {
         float3 direction;
