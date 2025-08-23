@@ -1392,7 +1392,7 @@ namespace qk
                 normal.Transpose();
 
                 d11::SubresourceMap map{ m_ctx, cb_object, 0, D3D11_MAP_WRITE_DISCARD, 0 };
-                auto constants{ static_cast<ObjectPassObjectConstants*>(map.Data()) };
+                auto constants{ map.Data<ObjectPassObjectConstants>() };
                 constants->model = model;
                 constants->normal = normal;
                 constants->albedo_color = Vector3{ object.albedo_color.elems };
@@ -1607,7 +1607,7 @@ namespace qk
                 normal.Transpose();
 
                 d11::SubresourceMap map{ m_ctx, cb_object, 0, D3D11_MAP_WRITE_DISCARD, 0 };
-                auto constants{ static_cast<ObjectPassObjectConstants*>(map.Data()) };
+                auto constants{ map.Data<ObjectPassObjectConstants>() };
                 constants->model = model;
                 constants->normal = normal;
                 constants->albedo_color = Vector3{ object.albedo_color.elems };
@@ -1765,7 +1765,7 @@ namespace qk
             Matrix projection{ Matrix::CreatePerspectiveFieldOfView(fov_rad, aspect, scene.camera.near_plane, scene.camera.far_plane) };
 
             d11::SubresourceMap map{ m_ctx, m_cb_scene.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
-            auto constants{ static_cast<ObjectPassSceneConstants*>(map.Data()) };
+            auto constants{ map.Data<ObjectPassSceneConstants>() };
             constants->view = view;
             constants->projection = projection;
             constants->point_lights_count = static_cast<std::int32_t>(scene.point_lights.size());
@@ -1803,7 +1803,7 @@ namespace qk
         if (m_sb_point_lights)
         {
             d11::SubresourceMap map{ m_ctx, m_sb_point_lights.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
-            auto constants{ static_cast<ObjectPassPointLight*>(map.Data()) };
+            auto constants{ map.Data<ObjectPassPointLight>() };
 
             for (std::size_t i{}; i < scene.point_lights.size(); i++)
             {
@@ -1847,7 +1847,7 @@ namespace qk
         if (m_sb_spot_lights)
         {
             d11::SubresourceMap map{ m_ctx, m_sb_spot_lights.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
-            auto constants{ static_cast<ObjectPassSpotLight*>(map.Data()) };
+            auto constants{ map.Data<ObjectPassSpotLight>() };
 
             for (std::size_t i{}; i < scene.spot_lights.size(); i++)
             {
@@ -2038,7 +2038,7 @@ namespace qk
             Matrix projection{ Matrix::CreatePerspectiveFieldOfView(fov_rad, aspect, scene.camera.near_plane, scene.camera.far_plane) };
 
             d11::SubresourceMap map{ m_ctx, m_cb_scene.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
-            auto constants{ static_cast<GizmoPassSceneConstants*>(map.Data()) };
+            auto constants{ map.Data<GizmoPassSceneConstants>() };
             constants->view = view;
             constants->projection = projection;
         }
@@ -2072,7 +2072,7 @@ namespace qk
                     Matrix model{ scale * translate };
 
                     d11::SubresourceMap map{ m_ctx, m_cb_object.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
-                    auto constants{ static_cast<GizmoPassObjectConstants*>(map.Data()) };
+                    auto constants{ map.Data<GizmoPassObjectConstants>() };
                     constants->model = model;
                     constants->color = Vector3{ point_light.color.elems };
                 }
@@ -2089,7 +2089,7 @@ namespace qk
                     Matrix model{ scale * translate };
 
                     d11::SubresourceMap map{ m_ctx, m_cb_object.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
-                    auto constants{ static_cast<GizmoPassObjectConstants*>(map.Data()) };
+                    auto constants{ map.Data<GizmoPassObjectConstants>() };
                     constants->model = model;
                     constants->color = Vector3{ point_light.color.elems };
                 }
@@ -2204,7 +2204,7 @@ namespace qk
                         Matrix model{ translate_0 * scale * rotate * translate_1 };
 
                         d11::SubresourceMap map{ m_ctx, m_cb_object.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
-                        auto constants{ static_cast<GizmoPassObjectConstants*>(map.Data()) };
+                        auto constants{ map.Data<GizmoPassObjectConstants>() };
                         constants->model = model;
                         constants->color = Vector3{ spot_light.color.elems };
                     }
