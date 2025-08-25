@@ -97,4 +97,29 @@ namespace qk::d11
         Buffer m_buffer;
         wrl::ComPtr<ID3D11ShaderResourceView> m_srv;
     };
+
+    class DepthStencilBuffer
+    {
+    public:
+        constexpr static UINT DEFAULT_W{ 8 };
+        constexpr static UINT DEFAULT_H{ 8 };
+    public:
+        DepthStencilBuffer(ID3D11Device* dev, DXGI_FORMAT format);
+        DepthStencilBuffer(ID3D11Device* dev, DXGI_FORMAT format, UINT w, UINT h);
+        ~DepthStencilBuffer() = default;
+        DepthStencilBuffer(const DepthStencilBuffer&) = delete;
+        DepthStencilBuffer(DepthStencilBuffer&) noexcept = default;
+        DepthStencilBuffer& operator=(const DepthStencilBuffer&) = delete;
+        DepthStencilBuffer& operator=(DepthStencilBuffer&) noexcept = default;
+    public:
+        explicit operator bool() const noexcept { return m_texture && m_dsv; }
+    public:
+        ID3D11DepthStencilView* DSV() const noexcept { return m_dsv.Get(); }
+    public:
+        void Resize(UINT w, UINT h);
+    private:
+        ID3D11Device* m_dev;
+        wrl::ComPtr<ID3D11Texture2D> m_texture;
+        wrl::ComPtr<ID3D11DepthStencilView> m_dsv;
+    };
 }

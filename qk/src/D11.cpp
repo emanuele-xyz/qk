@@ -92,4 +92,49 @@ namespace qk::d11
         // create shader resource view
         qk_CheckHR(m_dev->CreateShaderResourceView(m_buffer.Get(), nullptr, m_srv.ReleaseAndGetAddressOf()));
     }
+
+    DepthStencilBuffer::DepthStencilBuffer(ID3D11Device* dev, DXGI_FORMAT format)
+        : DepthStencilBuffer{ dev, format, DEFAULT_W, DEFAULT_H }
+    {
+    }
+    DepthStencilBuffer::DepthStencilBuffer(ID3D11Device* dev, DXGI_FORMAT format, UINT w, UINT h)
+        : m_dev{ dev }
+        , m_texture{}
+        , m_dsv{}
+    {
+        // create buffer
+        {
+            D3D11_TEXTURE2D_DESC desc{};
+            desc.Width = w;
+            desc.Height = h;
+            desc.MipLevels = 1;
+            desc.ArraySize = 1;
+            desc.Format = format;
+            desc.SampleDesc = { .Count = 1, .Quality = 0 };
+            desc.Usage = D3D11_USAGE_DEFAULT;
+            desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+            desc.CPUAccessFlags = 0;
+            desc.MiscFlags = 0;
+            qk_CheckHR(m_dev->CreateTexture2D(&desc, nullptr, m_texture.ReleaseAndGetAddressOf()));
+        }
+        // create depth stencil view
+        qk_CheckHR(m_dev->CreateDepthStencilView(m_texture.Get(), nullptr, m_dsv.ReleaseAndGetAddressOf()));
+    }
+    void DepthStencilBuffer::Resize(UINT w, UINT h)
+    {
+        D3D11_TEXTURE2D_DESC desc{};
+        m_texture->GetDesc(&desc);
+
+        // if w or h have actually changed, resize the buffer
+        if (desc.Width != w || desc.Height != h)
+        {
+            desc.Width = static_cast<UINT>(w);
+            desc.Height = static_cast<UINT>(h);
+
+            // create depth stencil buffer
+            qk_CheckHR(m_dev->CreateTexture2D(&desc, nullptr, m_texture.ReleaseAndGetAddressOf()));
+            // create depth stencil view
+            qk_CheckHR(m_dev->CreateDepthStencilView(m_texture.Get(), nullptr, m_dsv.ReleaseAndGetAddressOf()));
+        }
+    }
 }

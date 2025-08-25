@@ -2232,8 +2232,7 @@ namespace qk
         ID3D11DeviceContext* m_ctx;
         std::vector<Mesh> m_meshes;
         std::vector<Texture> m_textures;
-        wrl::ComPtr<ID3D11Texture2D> m_depth_stencil_buffer;
-        wrl::ComPtr<ID3D11DepthStencilView> m_dsv;
+        d11::DepthStencilBuffer m_depth_stencil_buffer;
         ObjectPass m_opaque_pass;
         GizmoPass m_gizmo_pass;
     };
@@ -2243,8 +2242,7 @@ namespace qk
         , m_ctx{ ctx }
         , m_meshes{}
         , m_textures{}
-        , m_depth_stencil_buffer{}
-        , m_dsv{}
+        , m_depth_stencil_buffer{ m_dev, DXGI_FORMAT_D32_FLOAT }
         , m_opaque_pass{ m_dev, m_ctx, m_meshes, m_textures }
         , m_gizmo_pass{ m_dev, m_ctx, m_meshes }
     {
@@ -2302,46 +2300,18 @@ namespace qk
     }
     void RendererImpl::Render(int w, int h, ID3D11RenderTargetView* rtv, const Scene& scene)
     {
-        // resize depth buffer if w or h changed
-        {
-            D3D11_TEXTURE2D_DESC desc{};
-            desc.Width = 0;
-            desc.Height = 0;
-            desc.MipLevels = 1;
-            desc.ArraySize = 1;
-            desc.Format = DXGI_FORMAT_D32_FLOAT;
-            desc.SampleDesc = { .Count = 1, .Quality = 0 };
-            desc.Usage = D3D11_USAGE_DEFAULT;
-            desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-            desc.CPUAccessFlags = 0;
-            desc.MiscFlags = 0;
-
-            if (m_depth_stencil_buffer)
-            {
-                m_depth_stencil_buffer->GetDesc(&desc);
-            }
-
-            if (desc.Width != static_cast<UINT>(w) || desc.Height != static_cast<UINT>(h))
-            {
-                desc.Width = static_cast<UINT>(w);
-                desc.Height = static_cast<UINT>(h);
-
-                // depth stencil buffer
-                qk_CheckHR(m_dev->CreateTexture2D(&desc, nullptr, m_depth_stencil_buffer.ReleaseAndGetAddressOf()));
-                // depth stencil view
-                qk_CheckHR(m_dev->CreateDepthStencilView(m_depth_stencil_buffer.Get(), nullptr, m_dsv.ReleaseAndGetAddressOf()));
-            }
-        }
+        // resize depth stencil buffer, if necessary
+        m_depth_stencil_buffer.Resize(static_cast<UINT>(w), static_cast<UINT>(h));
 
         // clear rtv using the specified background
         m_ctx->ClearRenderTargetView(rtv, scene.background.color.elems);
 
         // clear dsv
-        m_ctx->ClearDepthStencilView(m_dsv.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+        m_ctx->ClearDepthStencilView(m_depth_stencil_buffer.DSV(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 
         // run render passes
-        m_opaque_pass.Render(w, h, rtv, m_dsv.Get(), scene);
-        m_gizmo_pass.Render(w, h, rtv, m_dsv.Get(), scene);
+        m_opaque_pass.Render(w, h, rtv, m_depth_stencil_buffer.DSV(), scene);
+        m_gizmo_pass.Render(w, h, rtv, m_depth_stencil_buffer.DSV(), scene);
     }
 
     Renderer::Renderer(void* d3d_dev, void* d3d_ctx)
