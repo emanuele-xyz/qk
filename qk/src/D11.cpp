@@ -32,10 +32,6 @@ namespace qk::d11
         // create buffer
         qk_CheckHR(m_dev->CreateBuffer(desc, initial_data, m_buffer.ReleaseAndGetAddressOf()));
     }
-    SubresourceMap Buffer::Map(D3D11_MAP map_type, UINT map_flags) const
-    {
-        return SubresourceMap{ m_ctx, m_buffer.Get(), 0, map_type, map_flags };
-    }
 
     ConstantBuffer::ConstantBuffer()
         : m_dev{}
@@ -63,39 +59,48 @@ namespace qk::d11
         }
     }
 
-    StructuredBuffer::StructuredBuffer()
-        : m_dev{}
-        , m_ctx{}
-        , m_buffer{}
-        , m_srv{}
-    {
-    }
-    StructuredBuffer::StructuredBuffer(ID3D11Device* dev, UINT size_in_bytes, UINT stride_in_bytes, UINT misc_flags)
+    StructuredBuffer::StructuredBuffer(ID3D11Device* dev, UINT stride_in_bytes, UINT size_in_bytes, UINT misc_flags)
         : m_dev{ dev }
         , m_ctx{}
+        , m_buffer_desc{}
         , m_buffer{}
         , m_srv{}
     {
+        m_buffer_desc.ByteWidth = size_in_bytes;
+        m_buffer_desc.Usage = D3D11_USAGE_DYNAMIC;
+        m_buffer_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+        m_buffer_desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+        m_buffer_desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED | misc_flags;
+        m_buffer_desc.StructureByteStride = stride_in_bytes;
+
         // fetch context
         m_dev->GetImmediateContext(&m_ctx);
-        // create buffer
+        if (m_buffer_desc.ByteWidth > 0)
         {
-            D3D11_BUFFER_DESC desc{};
-            desc.ByteWidth = size_in_bytes;
-            desc.Usage = D3D11_USAGE_DYNAMIC;
-            desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-            desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-            desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED | misc_flags;
-            desc.StructureByteStride = stride_in_bytes;
-            m_buffer = Buffer{ m_dev, &desc };
+            // create buffer
+            m_buffer = Buffer{ m_dev, &m_buffer_desc };
+            // create shader resource view
+            qk_CheckHR(m_dev->CreateShaderResourceView(m_buffer.Get(), nullptr, m_srv.ReleaseAndGetAddressOf()));
         }
-        // create shader resource view
-        qk_CheckHR(m_dev->CreateShaderResourceView(m_buffer.Get(), nullptr, m_srv.ReleaseAndGetAddressOf()));
+    }
+    void StructuredBuffer::Resize(UINT size_in_bytes)
+    {
+        // if the buffer's size is different from the required size, resize it
+        if (m_buffer_desc.ByteWidth != size_in_bytes)
+        {
+            m_buffer_desc.ByteWidth = size_in_bytes;
+
+            // create buffer
+            m_buffer = Buffer{ m_dev, &m_buffer_desc };
+            // create srv
+            qk_CheckHR(m_dev->CreateShaderResourceView(m_buffer.Get(), nullptr, m_srv.ReleaseAndGetAddressOf()));
+        }
     }
 
     DepthStencilBuffer::DepthStencilBuffer(ID3D11Device* dev, DXGI_FORMAT format)
         : DepthStencilBuffer{ dev, format, DEFAULT_W, DEFAULT_H }
     {
+        // TODO: if no w and h were provided, don't actually allocate
     }
     DepthStencilBuffer::DepthStencilBuffer(ID3D11Device* dev, DXGI_FORMAT format, UINT w, UINT h)
         : m_dev{ dev }
@@ -122,10 +127,10 @@ namespace qk::d11
     }
     void DepthStencilBuffer::Resize(UINT w, UINT h)
     {
-        D3D11_TEXTURE2D_DESC desc{};
-        m_texture->GetDesc(&desc);
+        D3D11_TEXTURE2D_DESC desc{}; // TODO: unnecessary
+        m_texture->GetDesc(&desc); // TODO: unnecessary
 
-        // if w or h have actually changed, resize the buffer
+        // if the buffer resoultion is different from the required one, resize it
         if (desc.Width != w || desc.Height != h)
         {
             desc.Width = static_cast<UINT>(w);

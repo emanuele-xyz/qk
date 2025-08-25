@@ -1310,9 +1310,7 @@ namespace qk
         ID3D11SamplerState* texture_ss;
         ID3D11Buffer* cb_scene;
         ID3D11Buffer* cb_object;
-        ID3D11Buffer* sb_point_lights;
         ID3D11ShaderResourceView* srv_point_lights;
-        ID3D11Buffer* sb_spot_lights;
         ID3D11ShaderResourceView* srv_spot_lights;
     private:
         ID3D11Device* m_dev;
@@ -1334,9 +1332,7 @@ namespace qk
         , texture_ss{}
         , cb_scene{}
         , cb_object{}
-        , sb_point_lights{}
         , srv_point_lights{}
-        , sb_spot_lights{}
         , srv_spot_lights{}
     {
         // rasterizer state: backeface culling with counterclockwise frontfaces
@@ -1449,9 +1445,7 @@ namespace qk
         ID3D11SamplerState* texture_ss;
         ID3D11Buffer* cb_scene;
         ID3D11Buffer* cb_object;
-        ID3D11Buffer* sb_point_lights;
         ID3D11ShaderResourceView* srv_point_lights;
-        ID3D11Buffer* sb_spot_lights;
         ID3D11ShaderResourceView* srv_spot_lights;
     private:
         ID3D11Device* m_dev;
@@ -1479,9 +1473,7 @@ namespace qk
         , texture_ss{}
         , cb_scene{}
         , cb_object{}
-        , sb_point_lights{}
         , srv_point_lights{}
-        , sb_spot_lights{}
         , srv_spot_lights{}
     {
         // rasterizer state: no backface culling
@@ -1669,10 +1661,8 @@ namespace qk
         wrl::ComPtr<ID3D11SamplerState> m_texture_ss;
         wrl::ComPtr<ID3D11Buffer> m_cb_scene;
         wrl::ComPtr<ID3D11Buffer> m_cb_object;
-        wrl::ComPtr<ID3D11Buffer> m_sb_point_lights;
-        wrl::ComPtr<ID3D11ShaderResourceView> m_srv_point_lights;
-        wrl::ComPtr<ID3D11Buffer> m_sb_spot_lights;
-        wrl::ComPtr<ID3D11ShaderResourceView> m_srv_spot_lights;
+        d11::StructuredBuffer m_sb_point_lights;
+        d11::StructuredBuffer m_sb_spot_lights;
         OpaqueObjectSubpass m_opaque_object_subpass;
         TransparentObjectSubpass m_transparent_object_subpass;
     };
@@ -1687,10 +1677,8 @@ namespace qk
         , m_il{}
         , m_cb_scene{}
         , m_cb_object{}
-        , m_sb_point_lights{}
-        , m_srv_point_lights{}
-        , m_sb_spot_lights{}
-        , m_srv_spot_lights{}
+        , m_sb_point_lights{ dev, sizeof(ObjectPassPointLight) }
+        , m_sb_spot_lights{ dev, sizeof(ObjectPassSpotLight) }
         , m_opaque_object_subpass{ dev, ctx, m_meshes, m_textures }
         , m_transparent_object_subpass{ dev, ctx, m_meshes, m_textures }
     {
@@ -1772,37 +1760,14 @@ namespace qk
             constants->spot_lights_count = static_cast<std::int32_t>(scene.spot_lights.size());
         }
 
-        // resize point lights structured buffer if necessary
-        {
-            D3D11_BUFFER_DESC desc{};
-            desc.ByteWidth = 0;
-            desc.Usage = D3D11_USAGE_DYNAMIC;
-            desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-            desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-            desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-            desc.StructureByteStride = sizeof(ObjectPassPointLight);
-
-            if (m_sb_point_lights)
-            {
-                m_sb_point_lights->GetDesc(&desc);
-            }
-
-            UINT expected_size_in_bytes{ static_cast<UINT>(scene.point_lights.size() * sizeof(ObjectPassPointLight)) };
-            if (desc.ByteWidth != expected_size_in_bytes)
-            {
-                desc.ByteWidth = expected_size_in_bytes;
-
-                // buffer
-                qk_CheckHR(m_dev->CreateBuffer(&desc, nullptr, m_sb_point_lights.ReleaseAndGetAddressOf()));
-                // srv
-                qk_CheckHR(m_dev->CreateShaderResourceView(m_sb_point_lights.Get(), nullptr, m_srv_point_lights.ReleaseAndGetAddressOf()));
-            }
-        }
+        // resize point lights structured buffer, if necessary
+        // TODO: why not GrowToFit? only resize if the new size is bigger than the current size
+        m_sb_point_lights.Resize(static_cast<UINT>(scene.point_lights.size() * sizeof(ObjectPassPointLight)));
 
         // upload point lights
         if (m_sb_point_lights)
         {
-            d11::SubresourceMap map{ m_ctx, m_sb_point_lights.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
+            d11::SubresourceMap map{ m_sb_point_lights.Map(D3D11_MAP_WRITE_DISCARD) };
             auto constants{ map.Data<ObjectPassPointLight>() };
 
             for (std::size_t i{}; i < scene.point_lights.size(); i++)
@@ -1817,36 +1782,13 @@ namespace qk
         }
 
         // resize spot lights structured buffer if necessary
-        {
-            D3D11_BUFFER_DESC desc{};
-            desc.ByteWidth = 0;
-            desc.Usage = D3D11_USAGE_DYNAMIC;
-            desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-            desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-            desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-            desc.StructureByteStride = sizeof(ObjectPassSpotLight);
-
-            if (m_sb_spot_lights)
-            {
-                m_sb_spot_lights->GetDesc(&desc);
-            }
-
-            UINT expected_size_in_bytes{ static_cast<UINT>(scene.spot_lights.size() * sizeof(ObjectPassSpotLight)) };
-            if (desc.ByteWidth != expected_size_in_bytes)
-            {
-                desc.ByteWidth = expected_size_in_bytes;
-
-                // buffer
-                qk_CheckHR(m_dev->CreateBuffer(&desc, nullptr, m_sb_spot_lights.ReleaseAndGetAddressOf()));
-                // srv
-                qk_CheckHR(m_dev->CreateShaderResourceView(m_sb_spot_lights.Get(), nullptr, m_srv_spot_lights.ReleaseAndGetAddressOf()));
-            }
-        }
+        // TODO: why not GrowToFit? only resize if the new size is bigger than the current size
+        m_sb_spot_lights.Resize(static_cast<UINT>(scene.spot_lights.size() * sizeof(ObjectPassSpotLight)));
 
         // upload spot lights
         if (m_sb_spot_lights)
         {
-            d11::SubresourceMap map{ m_ctx, m_sb_spot_lights.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
+            d11::SubresourceMap map{ m_sb_spot_lights.Map(D3D11_MAP_WRITE_DISCARD) };
             auto constants{ map.Data<ObjectPassSpotLight>() };
 
             for (std::size_t i{}; i < scene.spot_lights.size(); i++)
@@ -1874,10 +1816,8 @@ namespace qk
         m_opaque_object_subpass.texture_ss = m_texture_ss.Get();
         m_opaque_object_subpass.cb_scene = m_cb_scene.Get();
         m_opaque_object_subpass.cb_object = m_cb_object.Get();
-        m_opaque_object_subpass.sb_point_lights = m_sb_point_lights.Get();
-        m_opaque_object_subpass.srv_point_lights = m_srv_point_lights.Get();
-        m_opaque_object_subpass.sb_spot_lights = m_sb_spot_lights.Get();
-        m_opaque_object_subpass.srv_spot_lights = m_srv_spot_lights.Get();
+        m_opaque_object_subpass.srv_point_lights = m_sb_point_lights.SRV();
+        m_opaque_object_subpass.srv_spot_lights = m_sb_spot_lights.SRV();
 
         // run opaque objects subpass
         m_opaque_object_subpass.Render(rtv, dsv, m_viewport, scene);
@@ -1889,10 +1829,8 @@ namespace qk
         m_transparent_object_subpass.texture_ss = m_texture_ss.Get();
         m_transparent_object_subpass.cb_scene = m_cb_scene.Get();
         m_transparent_object_subpass.cb_object = m_cb_object.Get();
-        m_transparent_object_subpass.sb_point_lights = m_sb_point_lights.Get();
-        m_transparent_object_subpass.srv_point_lights = m_srv_point_lights.Get();
-        m_transparent_object_subpass.sb_spot_lights = m_sb_spot_lights.Get();
-        m_transparent_object_subpass.srv_spot_lights = m_srv_spot_lights.Get();
+        m_transparent_object_subpass.srv_point_lights = m_sb_point_lights.SRV();
+        m_transparent_object_subpass.srv_spot_lights = m_sb_spot_lights.SRV();
 
         // run transparent objects subpass
         m_transparent_object_subpass.Render(rtv, dsv, m_viewport, scene);

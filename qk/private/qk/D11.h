@@ -17,7 +17,7 @@ namespace qk::d11
     class SubresourceMap
     {
     public:
-        SubresourceMap(ID3D11DeviceContext* ctx, ID3D11Resource* res, UINT subres_idx, D3D11_MAP map_type, UINT map_flags);
+        SubresourceMap(ID3D11DeviceContext* ctx, ID3D11Resource* res, UINT subres_idx, D3D11_MAP map_type, UINT map_flags = 0);
         ~SubresourceMap();
         SubresourceMap(const SubresourceMap&) = delete;
         SubresourceMap(SubresourceMap&&) noexcept = delete;
@@ -46,9 +46,13 @@ namespace qk::d11
         Buffer& operator=(const Buffer&) = delete;
         Buffer& operator=(Buffer&&) noexcept = default;
     public:
-        ID3D11Buffer* Get() const { return m_buffer.Get(); }
+        explicit operator bool() const noexcept { return m_buffer; }
     public:
-        SubresourceMap Map(D3D11_MAP map_type, UINT map_flags) const;
+        ID3D11Buffer* operator->() const noexcept { return m_buffer.Get(); }
+    public:
+        ID3D11Buffer* Get() const noexcept { return m_buffer.Get(); }
+    public:
+        SubresourceMap Map(D3D11_MAP map_type, UINT map_flags = 0) const { return SubresourceMap{ m_ctx, m_buffer.Get(), 0, map_type, map_flags }; }
     private:
         ID3D11Device* m_dev;
         ID3D11DeviceContext* m_ctx;
@@ -69,7 +73,7 @@ namespace qk::d11
         ConstantBuffer& operator=(const ConstantBuffer&) = delete;
         ConstantBuffer& operator=(ConstantBuffer&&) noexcept = default;
     public:
-        SubresourceMap Map(D3D11_MAP map_type, UINT map_flags) const { return m_buffer.Map(map_type, map_flags); }
+        SubresourceMap Map(D3D11_MAP map_type, UINT map_flags = 0) const { return m_buffer.Map(map_type, map_flags); }
     private:
         ID3D11Device* m_dev;
         ID3D11DeviceContext* m_ctx;
@@ -80,20 +84,25 @@ namespace qk::d11
     {
     public:
         template <typename T, unsigned int N>
-        StructuredBuffer(ID3D11Device* dev, UINT misc_flags = 0) : StructuredBuffer{ dev, sizeof(T) * N, sizeof(T), misc_flags } {}
+        StructuredBuffer(ID3D11Device* dev, UINT misc_flags = 0) : StructuredBuffer{ dev, sizeof(T), sizeof(T) * N, misc_flags } {}
     public:
-        StructuredBuffer();
-        StructuredBuffer(ID3D11Device* dev, UINT size_in_bytes, UINT stride_in_bytes, UINT misc_flags = 0);
+        StructuredBuffer(ID3D11Device* dev, UINT stride_in_bytes, UINT size_in_bytes = 0, UINT misc_flags = 0);
         ~StructuredBuffer() = default;
         StructuredBuffer(const StructuredBuffer&) = delete;
         StructuredBuffer(StructuredBuffer&&) noexcept = default;
         StructuredBuffer& operator=(const StructuredBuffer&) = delete;
         StructuredBuffer& operator=(StructuredBuffer&&) noexcept = default;
     public:
-        SubresourceMap Map(D3D11_MAP map_type, UINT map_flags) const { return m_buffer.Map(map_type, map_flags); }
+        explicit operator bool() const noexcept { return m_buffer && m_srv; }
+    public:
+        ID3D11ShaderResourceView* SRV() const noexcept { return m_srv.Get(); }
+    public:
+        SubresourceMap Map(D3D11_MAP map_type, UINT map_flags = 0) const { return m_buffer.Map(map_type, map_flags); }
+        void Resize(UINT size_in_bytes);
     private:
         ID3D11Device* m_dev;
         ID3D11DeviceContext* m_ctx;
+        D3D11_BUFFER_DESC m_buffer_desc;
         Buffer m_buffer;
         wrl::ComPtr<ID3D11ShaderResourceView> m_srv;
     };
