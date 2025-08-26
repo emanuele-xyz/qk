@@ -28,7 +28,7 @@ namespace qk::d11
         , m_buffer{}
     {
         // fetch context
-        m_dev->GetImmediateContext(&m_ctx);
+        m_dev->GetImmediateContext(m_ctx.ReleaseAndGetAddressOf());
         // create buffer
         qk_CheckHR(m_dev->CreateBuffer(desc, initial_data, m_buffer.ReleaseAndGetAddressOf()));
     }
@@ -44,7 +44,7 @@ namespace qk::d11
         , m_ctx{}
         , m_buffer{}
     {
-        m_dev->GetImmediateContext(&m_ctx);
+        m_dev->GetImmediateContext(m_ctx.ReleaseAndGetAddressOf());
 
         // create buffer
         {
@@ -74,7 +74,7 @@ namespace qk::d11
         m_buffer_desc.StructureByteStride = stride_in_bytes;
 
         // fetch context
-        m_dev->GetImmediateContext(&m_ctx);
+        m_dev->GetImmediateContext(m_ctx.ReleaseAndGetAddressOf());
         if (m_buffer_desc.ByteWidth > 0)
         {
             // create buffer

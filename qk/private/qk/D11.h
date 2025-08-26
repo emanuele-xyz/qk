@@ -52,10 +52,10 @@ namespace qk::d11
     public:
         ID3D11Buffer* Get() const noexcept { return m_buffer.Get(); }
     public:
-        SubresourceMap Map(D3D11_MAP map_type, UINT map_flags = 0) const { return SubresourceMap{ m_ctx, m_buffer.Get(), 0, map_type, map_flags }; }
+        SubresourceMap Map(D3D11_MAP map_type, UINT map_flags = 0) const { return SubresourceMap{ m_ctx.Get(), m_buffer.Get(), 0, map_type, map_flags}; }
     private:
         ID3D11Device* m_dev;
-        ID3D11DeviceContext* m_ctx;
+        wrl::ComPtr<ID3D11DeviceContext> m_ctx;
         wrl::ComPtr<ID3D11Buffer> m_buffer;
     };
 
@@ -76,7 +76,7 @@ namespace qk::d11
         SubresourceMap Map(D3D11_MAP map_type, UINT map_flags = 0) const { return m_buffer.Map(map_type, map_flags); }
     private:
         ID3D11Device* m_dev;
-        ID3D11DeviceContext* m_ctx;
+        wrl::ComPtr<ID3D11DeviceContext> m_ctx;
         Buffer m_buffer;
     };
 
@@ -101,7 +101,7 @@ namespace qk::d11
         void Resize(UINT size_in_bytes);
     private:
         ID3D11Device* m_dev;
-        ID3D11DeviceContext* m_ctx;
+        wrl::ComPtr<ID3D11DeviceContext> m_ctx;
         D3D11_BUFFER_DESC m_buffer_desc;
         Buffer m_buffer;
         wrl::ComPtr<ID3D11ShaderResourceView> m_srv;

@@ -6,4 +6,3 @@
 []: use a single shader for object and gizmo pass
 []: add support for flat rendering, just using the albedo color and no lighting
 []: use d11::ConstantBuffer helper class
-[]: we are leaking some d3d11 objects
