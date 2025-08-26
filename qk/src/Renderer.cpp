@@ -1659,8 +1659,8 @@ namespace qk
         wrl::ComPtr<ID3D11PixelShader> m_ps;
         wrl::ComPtr<ID3D11InputLayout> m_il;
         wrl::ComPtr<ID3D11SamplerState> m_texture_ss;
-        wrl::ComPtr<ID3D11Buffer> m_cb_scene;
-        wrl::ComPtr<ID3D11Buffer> m_cb_object;
+        d11::ConstantBuffer m_cb_scene;
+        d11::ConstantBuffer m_cb_object;
         d11::StructuredBuffer m_sb_point_lights;
         d11::StructuredBuffer m_sb_spot_lights;
         OpaqueObjectSubpass m_opaque_object_subpass;
@@ -1720,28 +1720,10 @@ namespace qk
         }
 
         // scene constant buffer
-        {
-            D3D11_BUFFER_DESC desc{};
-            desc.ByteWidth = sizeof(ObjectPassSceneConstants);
-            desc.Usage = D3D11_USAGE_DYNAMIC;
-            desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-            desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-            desc.MiscFlags = 0;
-            desc.StructureByteStride = 0;
-            qk_CheckHR(m_dev->CreateBuffer(&desc, nullptr, m_cb_scene.ReleaseAndGetAddressOf()));
-        }
+        m_cb_scene = d11::ConstantBuffer{ m_dev, sizeof(ObjectPassSceneConstants) };
 
         // object constant buffer
-        {
-            D3D11_BUFFER_DESC desc{};
-            desc.ByteWidth = sizeof(ObjectPassObjectConstants);
-            desc.Usage = D3D11_USAGE_DYNAMIC;
-            desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-            desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-            desc.MiscFlags = 0;
-            desc.StructureByteStride = 0;
-            qk_CheckHR(m_dev->CreateBuffer(&desc, nullptr, m_cb_object.ReleaseAndGetAddressOf()));
-        }
+        m_cb_object = d11::ConstantBuffer{ m_dev,sizeof(ObjectPassObjectConstants) };
     }
     void ObjectPass::Render(int w, int h, ID3D11RenderTargetView* rtv, ID3D11DepthStencilView* dsv, const Scene& scene)
     {
@@ -1752,7 +1734,7 @@ namespace qk
             Matrix view{ Matrix::CreateLookAt(Vector3{ scene.camera.eye.elems }, Vector3{ scene.camera.target.elems }, Vector3{ scene.camera.up.elems }) };
             Matrix projection{ Matrix::CreatePerspectiveFieldOfView(fov_rad, aspect, scene.camera.near_plane, scene.camera.far_plane) };
 
-            d11::SubresourceMap map{ m_ctx, m_cb_scene.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0 };
+            d11::SubresourceMap map{ m_cb_scene.Map(D3D11_MAP_WRITE_DISCARD) };
             auto constants{ map.Data<ObjectPassSceneConstants>() };
             constants->view = view;
             constants->projection = projection;

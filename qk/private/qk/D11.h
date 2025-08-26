@@ -73,6 +73,8 @@ namespace qk::d11
         ConstantBuffer& operator=(const ConstantBuffer&) = delete;
         ConstantBuffer& operator=(ConstantBuffer&&) noexcept = default;
     public:
+        ID3D11Buffer* Get() const noexcept { return m_buffer.Get(); }
+    public:
         SubresourceMap Map(D3D11_MAP map_type, UINT map_flags = 0) const { return m_buffer.Map(map_type, map_flags); }
     private:
         ID3D11Device* m_dev;
