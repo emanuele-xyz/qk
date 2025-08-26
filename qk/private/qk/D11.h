@@ -110,9 +110,6 @@ namespace qk::d11
     class DepthStencilBuffer
     {
     public:
-        constexpr static UINT DEFAULT_W{ 8 };
-        constexpr static UINT DEFAULT_H{ 8 };
-    public:
         DepthStencilBuffer(ID3D11Device* dev, DXGI_FORMAT format);
         DepthStencilBuffer(ID3D11Device* dev, DXGI_FORMAT format, UINT w, UINT h);
         ~DepthStencilBuffer() = default;
@@ -128,6 +125,7 @@ namespace qk::d11
         void Resize(UINT w, UINT h);
     private:
         ID3D11Device* m_dev;
+        D3D11_TEXTURE2D_DESC m_texture_desc;
         wrl::ComPtr<ID3D11Texture2D> m_texture;
         wrl::ComPtr<ID3D11DepthStencilView> m_dsv;
     };

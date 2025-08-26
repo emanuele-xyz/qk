@@ -44,8 +44,8 @@ namespace qk::d11
         , m_ctx{}
         , m_buffer{}
     {
+        // fetch context
         m_dev->GetImmediateContext(m_ctx.ReleaseAndGetAddressOf());
-
         // create buffer
         {
             D3D11_BUFFER_DESC desc{};
@@ -86,7 +86,7 @@ namespace qk::d11
     void StructuredBuffer::Resize(UINT size_in_bytes)
     {
         // if the buffer's size is different from the required size, resize it
-        if (m_buffer_desc.ByteWidth != size_in_bytes)
+        if (size_in_bytes > 0 && m_buffer_desc.ByteWidth != size_in_bytes)
         {
             m_buffer_desc.ByteWidth = size_in_bytes;
 
@@ -98,46 +98,44 @@ namespace qk::d11
     }
 
     DepthStencilBuffer::DepthStencilBuffer(ID3D11Device* dev, DXGI_FORMAT format)
-        : DepthStencilBuffer{ dev, format, DEFAULT_W, DEFAULT_H }
+        : DepthStencilBuffer{ dev, format, 0, 0 }
     {
-        // TODO: if no w and h were provided, don't actually allocate
     }
     DepthStencilBuffer::DepthStencilBuffer(ID3D11Device* dev, DXGI_FORMAT format, UINT w, UINT h)
         : m_dev{ dev }
+        , m_texture_desc{}
         , m_texture{}
         , m_dsv{}
     {
-        // create buffer
+        m_texture_desc.Width = w;
+        m_texture_desc.Height = h;
+        m_texture_desc.MipLevels = 1;
+        m_texture_desc.ArraySize = 1;
+        m_texture_desc.Format = format;
+        m_texture_desc.SampleDesc = { .Count = 1, .Quality = 0 };
+        m_texture_desc.Usage = D3D11_USAGE_DEFAULT;
+        m_texture_desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+        m_texture_desc.CPUAccessFlags = 0;
+        m_texture_desc.MiscFlags = 0;
+
+        if (m_texture_desc.Width > 0 && m_texture_desc.Height > 0)
         {
-            D3D11_TEXTURE2D_DESC desc{};
-            desc.Width = w;
-            desc.Height = h;
-            desc.MipLevels = 1;
-            desc.ArraySize = 1;
-            desc.Format = format;
-            desc.SampleDesc = { .Count = 1, .Quality = 0 };
-            desc.Usage = D3D11_USAGE_DEFAULT;
-            desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-            desc.CPUAccessFlags = 0;
-            desc.MiscFlags = 0;
-            qk_CheckHR(m_dev->CreateTexture2D(&desc, nullptr, m_texture.ReleaseAndGetAddressOf()));
+            // create texture
+            qk_CheckHR(m_dev->CreateTexture2D(&m_texture_desc, nullptr, m_texture.ReleaseAndGetAddressOf()));
+            // create depth stencil view
+            qk_CheckHR(m_dev->CreateDepthStencilView(m_texture.Get(), nullptr, m_dsv.ReleaseAndGetAddressOf()));
         }
-        // create depth stencil view
-        qk_CheckHR(m_dev->CreateDepthStencilView(m_texture.Get(), nullptr, m_dsv.ReleaseAndGetAddressOf()));
     }
     void DepthStencilBuffer::Resize(UINT w, UINT h)
     {
-        D3D11_TEXTURE2D_DESC desc{}; // TODO: unnecessary
-        m_texture->GetDesc(&desc); // TODO: unnecessary
-
         // if the buffer resoultion is different from the required one, resize it
-        if (desc.Width != w || desc.Height != h)
+        if (w > 0 && h > 0 && (m_texture_desc.Width != w || m_texture_desc.Height != h))
         {
-            desc.Width = static_cast<UINT>(w);
-            desc.Height = static_cast<UINT>(h);
+            m_texture_desc.Width = static_cast<UINT>(w);
+            m_texture_desc.Height = static_cast<UINT>(h);
 
             // create depth stencil buffer
-            qk_CheckHR(m_dev->CreateTexture2D(&desc, nullptr, m_texture.ReleaseAndGetAddressOf()));
+            qk_CheckHR(m_dev->CreateTexture2D(&m_texture_desc, nullptr, m_texture.ReleaseAndGetAddressOf()));
             // create depth stencil view
             qk_CheckHR(m_dev->CreateDepthStencilView(m_texture.Get(), nullptr, m_dsv.ReleaseAndGetAddressOf()));
         }
