@@ -25,12 +25,14 @@ namespace qk
 
     struct DirectionalLight
     {
+        bool render_gizmos{ false };
         v3 direction{ -1.0f, -1.0f, -1.0f };
         v3 color{ 1.0f, 1.0f, 1.0f };
     };
 
     struct PointLight
     {
+        bool render_gizmos{ false };
         v3 position{};
         v3 color{ 1.0f, 1.0f, 1.0f };
         float r_min{ 0.1f };
@@ -39,6 +41,7 @@ namespace qk
 
     struct SpotLight
     {
+        bool render_gizmos{ false };
         v3 position{ 1.0f, 1.0f, 1.0f };
         v3 direction{ 0.0f, -1.0f, 0.0f };
         v3 color{ 1.0f, 1.0f, 1.0f };

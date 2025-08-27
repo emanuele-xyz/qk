@@ -163,6 +163,7 @@ namespace qk_gui
                 }
                 if (ImGui::BeginTabItem("Directional Light"))
                 {
+                    ImGui::Checkbox("Render Gizmos", &m_scene.directional_light.render_gizmos);
                     ImGui::DragFloat3("Direction", m_scene.directional_light.direction.elems, 0.01f, -1.0f, +1.0f);
                     ImGui::ColorEdit3("Color", m_scene.directional_light.color.elems);
 
@@ -180,6 +181,7 @@ namespace qk_gui
                             ImGuiTreeNodeFlags tree_node_flags{ ImGuiTreeNodeFlags_DefaultOpen };
                             if (ImGui::CollapsingHeader(label.c_str(), tree_node_flags))
                             {
+                                ImGui::Checkbox("Render Gizmos", &point_light.render_gizmos);
                                 ImGui::DragFloat3("Position", point_light.position.elems, 0.01f);
                                 ImGui::ColorEdit3("Color", point_light.color.elems);
                                 ImGui::DragFloat("Min Radius", &point_light.r_min, 0.01f, 0.01f, 1000.0f);
@@ -202,6 +204,7 @@ namespace qk_gui
                             ImGuiTreeNodeFlags tree_node_flags{ ImGuiTreeNodeFlags_DefaultOpen };
                             if (ImGui::CollapsingHeader(label.c_str(), tree_node_flags))
                             {
+                                ImGui::Checkbox("Render Gizmos", &spot_light.render_gizmos);
                                 ImGui::DragFloat3("Position", spot_light.position.elems, 0.01f);
                                 ImGui::DragFloat3("Direction", spot_light.direction.elems, 0.01f);
                                 ImGui::ColorEdit3("Color", spot_light.color.elems);

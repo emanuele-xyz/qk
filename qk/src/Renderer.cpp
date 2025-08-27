@@ -1640,6 +1640,8 @@ namespace qk
 
                 for (const PointLight& point_light : scene.point_lights)
                 {
+                    if (!point_light.render_gizmos) continue;
+
                     // upload light source object constants
                     {
                         float diameter{ point_light.r_min * 2.0f };
@@ -1702,6 +1704,8 @@ namespace qk
 
                 for (const SpotLight& spot_light : scene.spot_lights)
                 {
+                    if (!spot_light.render_gizmos) continue;
+
                     // for each spot light we render three cones: umbra, penumbra and near
                     constexpr int COUNT{ 3 };
 
