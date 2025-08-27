@@ -128,14 +128,6 @@
     <ClCompile Include="src\Renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="hlsl\include\qk\GizmoPass.hlsli" />
-    <CopyFileToFolders Include="hlsl\include\qk\GizmoPassBuffers.hlsli">
-      <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)\private\qk\hlsl\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)\private\qk\hlsl\</DestinationFolders>
-      <DestinationFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(Filename).h</DestinationFileName>
-      <DestinationFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(Filename).h</DestinationFileName>
-    </CopyFileToFolders>
     <None Include="hlsl\include\qk\ObjectPass.hlsli" />
     <CopyFileToFolders Include="hlsl\include\qk\ObjectPassBuffers.hlsli">
       <FileType>Document</FileType>
@@ -146,14 +138,6 @@
     </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="hlsl\src\GizmoPassPS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-    </FxCompile>
-    <FxCompile Include="hlsl\src\GizmoPassVS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-    </FxCompile>
     <FxCompile Include="hlsl\src\ObjectPassPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>

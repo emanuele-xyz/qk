@@ -64,54 +64,61 @@ float4 main(VSOutput input) : SV_TARGET
     
     float3 shaded = float3(0, 0, 0);
     
-    // Lambert for the directional light
+    if (cb_object.shading_mode == QK_OBJECT_PASS_OBJECT_CONSTANT_SHADING_MODE_FLAT)
     {
-        float3 l = normalize(-cb_object.directional_light.direction); // negate the directional light direction
-        float3 c_light = cb_object.directional_light.color;
-        shaded += lambert(l, n, c_light, albedo);
+        shaded = albedo;
     }
-
-    // Lambert for the point lights
+    else if (cb_object.shading_mode == QK_OBJECT_PASS_OBJECT_CONSTANT_SHADING_MODE_SHADED)
     {
-        for (int i = 0; i < cb_scene.point_lights_count; i++)
+        // Lambert for the directional light
         {
-            ObjectPassPointLight point_light = sb_point_lights[i];
-            
-            float3 d = point_light.world_position - input.world_position;
-            float r = length(d);
-            float3 l = d / r;
-            float3 c_light = point_light.color;
-            {
-                float r_min = point_light.r_min;
-                float r_max = point_light.r_max;
-                c_light *= f_dist(r, r_min, r_max); // apply distance falloff function
-            }
+            float3 l = normalize(-cb_object.directional_light.direction); // negate the directional light direction
+            float3 c_light = cb_object.directional_light.color;
             shaded += lambert(l, n, c_light, albedo);
         }
-    }
-    
-    // Lambert for the spot lights
-    {
-        for (int i = 0; i < cb_scene.spot_lights_count; i++)
+
+        // Lambert for the point lights
         {
-            ObjectPassSpotLight spot_light = sb_spot_lights[i];
+            for (int i = 0; i < cb_scene.point_lights_count; i++)
+            {
+                ObjectPassPointLight point_light = sb_point_lights[i];
+            
+                float3 d = point_light.world_position - input.world_position;
+                float r = length(d);
+                float3 l = d / r;
+                float3 c_light = point_light.color;
+                {
+                    float r_min = point_light.r_min;
+                    float r_max = point_light.r_max;
+                    c_light *= f_dist(r, r_min, r_max); // apply distance falloff function
+                }
+                shaded += lambert(l, n, c_light, albedo);
+            }
+        }
+    
+        // Lambert for the spot lights
+        {
+            for (int i = 0; i < cb_scene.spot_lights_count; i++)
+            {
+                ObjectPassSpotLight spot_light = sb_spot_lights[i];
         
-            float3 d = spot_light.world_position - input.world_position;
-            float r = length(d);
-            float3 l = d / r;
-            float3 c_light = spot_light.color;
-            {
-                float r_min = spot_light.r_min;
-                float r_max = spot_light.r_max;
-                c_light *= f_dist(r, r_min, r_max); // apply distance falloff function
+                float3 d = spot_light.world_position - input.world_position;
+                float r = length(d);
+                float3 l = d / r;
+                float3 c_light = spot_light.color;
+                {
+                    float r_min = spot_light.r_min;
+                    float r_max = spot_light.r_max;
+                    c_light *= f_dist(r, r_min, r_max); // apply distance falloff function
+                }
+                {
+                    float3 s = normalize(spot_light.direction);
+                    float theta_u = spot_light.umbra_rad;
+                    float theta_p = spot_light.penumbra_rad;
+                    c_light *= f_dir(l, s, theta_u, theta_p); // apply directional falloff function
+                }
+                shaded += lambert(l, n, c_light, albedo);
             }
-            {
-                float3 s = normalize(spot_light.direction);
-                float theta_u = spot_light.umbra_rad;
-                float theta_p = spot_light.penumbra_rad;
-                c_light *= f_dir(l, s, theta_u, theta_p); // apply directional falloff function
-            }
-            shaded += lambert(l, n, c_light, albedo);
         }
     }
     

@@ -62,16 +62,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="hlsl\include\qk\ObjectPass.hlsli" />
-    <None Include="hlsl\include\qk\GizmoPass.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="hlsl\src\ObjectPassVS.hlsl" />
     <FxCompile Include="hlsl\src\ObjectPassPS.hlsl" />
-    <FxCompile Include="hlsl\src\GizmoPassVS.hlsl" />
-    <FxCompile Include="hlsl\src\GizmoPassPS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="hlsl\include\qk\ObjectPassBuffers.hlsli" />
-    <CopyFileToFolders Include="hlsl\include\qk\GizmoPassBuffers.hlsli" />
   </ItemGroup>
 </Project>

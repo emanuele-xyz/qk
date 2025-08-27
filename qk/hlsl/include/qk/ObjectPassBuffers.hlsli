@@ -1,6 +1,9 @@
 #ifndef __QK_OBJECT_PASS_BUFFERS__
 #define __QK_OBJECT_PASS_BUFFERS__
 
+#define QK_OBJECT_PASS_OBJECT_CONSTANT_SHADING_MODE_FLAT 0
+#define QK_OBJECT_PASS_OBJECT_CONSTANT_SHADING_MODE_SHADED 1
+
 struct ObjectPassSceneConstants
 {
     matrix view;
@@ -17,7 +20,8 @@ struct ObjectPassObjectConstants
     float3 albedo_color;
     float albedo_mix;
     float opacity;
-    float3 _pad;
+    int shading_mode;
+    float _pad[2];
     struct
     {
         float3 direction;
