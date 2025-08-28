@@ -1945,7 +1945,7 @@ namespace qk
         , m_ctx{ ctx }
         , m_meshes{}
         , m_textures{}
-        , m_depth_stencil_buffer{ m_dev, DXGI_FORMAT_D32_FLOAT }
+        , m_depth_stencil_buffer{ m_dev, DXGI_FORMAT_D32_FLOAT } // TODO: hardcoded format
         , m_object_pass{ m_dev, m_ctx, m_meshes, m_textures }
     {
         // upload default meshes

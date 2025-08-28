@@ -140,4 +140,52 @@ namespace qk::d11
             qk_CheckHR(m_dev->CreateDepthStencilView(m_texture.Get(), nullptr, m_dsv.ReleaseAndGetAddressOf()));
         }
     }
+
+    Texture2D::Texture2D(ID3D11Device* dev, const D3D11_TEXTURE2D_DESC* desc, const D3D11_SUBRESOURCE_DATA* data)
+        : m_dev{ dev }
+        , m_texture{}
+        , m_rtv{}
+        , m_srv{}
+        , m_dsv{}
+    {
+        Init(desc, data);
+    }
+    void Texture2D::Resize(UINT w, UINT h)
+    {
+        // get texture descritpion
+        D3D11_TEXTURE2D_DESC desc{};
+        m_texture->GetDesc(&desc);
+
+        // if the texture's resolution is different from the required one, resize it
+        if (desc.Width != w || desc.Height != h)
+        {
+            desc.Width = w;
+            desc.Height = h;
+
+            Init(&desc);
+        }
+    }
+    void Texture2D::Init(const D3D11_TEXTURE2D_DESC* desc, const D3D11_SUBRESOURCE_DATA* data)
+    {
+        // create texture, if description was provided
+        if (desc)
+        {
+            qk_CheckHR(m_dev->CreateTexture2D(desc, data, m_texture.ReleaseAndGetAddressOf()));
+        }
+        // create rtv, if necessary
+        if (desc && (desc->BindFlags | D3D11_BIND_RENDER_TARGET))
+        {
+            qk_CheckHR(m_dev->CreateRenderTargetView(m_texture.Get(), nullptr, m_rtv.ReleaseAndGetAddressOf()));
+        }
+        // create srv, if necessary
+        if (desc && (desc->BindFlags | D3D11_BIND_SHADER_RESOURCE))
+        {
+            qk_CheckHR(m_dev->CreateShaderResourceView(m_texture.Get(), nullptr, m_srv.ReleaseAndGetAddressOf()));
+        }
+        // create dsv, if necessary
+        if (desc && (desc->BindFlags | D3D11_BIND_DEPTH_STENCIL))
+        {
+            qk_CheckHR(m_dev->CreateDepthStencilView(m_texture.Get(), nullptr, m_dsv.ReleaseAndGetAddressOf()));
+        }
+    }
 }
