@@ -141,51 +141,65 @@ namespace qk::d11
         }
     }
 
-    Texture2D::Texture2D(ID3D11Device* dev, const D3D11_TEXTURE2D_DESC* desc, const D3D11_SUBRESOURCE_DATA* data)
+    Buffer2D::Buffer2D(ID3D11Device* dev, DXGI_FORMAT format, UINT bind_flags, UINT w, UINT h, UINT cpu_access_flags, UINT misc_flags)
         : m_dev{ dev }
+        , m_texture_desc{}
         , m_texture{}
         , m_rtv{}
         , m_srv{}
         , m_dsv{}
     {
-        Init(desc, data);
+        m_texture_desc.Width = w > 0 ? w : 0;
+        m_texture_desc.Height = h > 0 ? h : 0;
+        m_texture_desc.MipLevels = 1;
+        m_texture_desc.ArraySize = 1;
+        m_texture_desc.Format = format;
+        m_texture_desc.SampleDesc = { .Count = 1, .Quality = 0 };
+        m_texture_desc.Usage = D3D11_USAGE_DEFAULT;
+        m_texture_desc.BindFlags = bind_flags;
+        m_texture_desc.CPUAccessFlags = cpu_access_flags;
+        m_texture_desc.MiscFlags = misc_flags;
+        Init();
     }
-    void Texture2D::Resize(UINT w, UINT h)
+    void Buffer2D::Resize(UINT w, UINT h)
     {
-        // get texture descritpion
-        D3D11_TEXTURE2D_DESC desc{};
-        m_texture->GetDesc(&desc);
-
         // if the texture's resolution is different from the required one, resize it
-        if (desc.Width != w || desc.Height != h)
+        if (m_texture_desc.Width != w || m_texture_desc.Height != h)
         {
-            desc.Width = w;
-            desc.Height = h;
-
-            Init(&desc);
+            m_texture_desc.Width = w;
+            m_texture_desc.Height = h;
+            Init();
         }
     }
-    void Texture2D::Init(const D3D11_TEXTURE2D_DESC* desc, const D3D11_SUBRESOURCE_DATA* data)
+    void Buffer2D::Free()
     {
-        // create texture, if description was provided
-        if (desc)
+        m_texture.Reset();
+        m_rtv.Reset();
+        m_srv.Reset();
+        m_dsv.Reset();
+    }
+    void Buffer2D::Init()
+    {
+        // create texture, if resolution is valid
+        if (m_texture_desc.Width > 0 && m_texture_desc.Height > 0)
         {
-            qk_CheckHR(m_dev->CreateTexture2D(desc, data, m_texture.ReleaseAndGetAddressOf()));
-        }
-        // create rtv, if necessary
-        if (desc && (desc->BindFlags | D3D11_BIND_RENDER_TARGET))
-        {
-            qk_CheckHR(m_dev->CreateRenderTargetView(m_texture.Get(), nullptr, m_rtv.ReleaseAndGetAddressOf()));
-        }
-        // create srv, if necessary
-        if (desc && (desc->BindFlags | D3D11_BIND_SHADER_RESOURCE))
-        {
-            qk_CheckHR(m_dev->CreateShaderResourceView(m_texture.Get(), nullptr, m_srv.ReleaseAndGetAddressOf()));
-        }
-        // create dsv, if necessary
-        if (desc && (desc->BindFlags | D3D11_BIND_DEPTH_STENCIL))
-        {
-            qk_CheckHR(m_dev->CreateDepthStencilView(m_texture.Get(), nullptr, m_dsv.ReleaseAndGetAddressOf()));
+            qk_CheckHR(m_dev->CreateTexture2D(&m_texture_desc, nullptr, m_texture.ReleaseAndGetAddressOf()));
+
+            // create rtv, if necessary
+            if (m_texture_desc.BindFlags & D3D11_BIND_RENDER_TARGET)
+            {
+                qk_CheckHR(m_dev->CreateRenderTargetView(m_texture.Get(), nullptr, m_rtv.ReleaseAndGetAddressOf()));
+            }
+            // create srv, if necessary
+            if (m_texture_desc.BindFlags & D3D11_BIND_SHADER_RESOURCE)
+            {
+                qk_CheckHR(m_dev->CreateShaderResourceView(m_texture.Get(), nullptr, m_srv.ReleaseAndGetAddressOf()));
+            }
+            // create dsv, if necessary
+            if (m_texture_desc.BindFlags & D3D11_BIND_DEPTH_STENCIL)
+            {
+                qk_CheckHR(m_dev->CreateDepthStencilView(m_texture.Get(), nullptr, m_dsv.ReleaseAndGetAddressOf()));
+            }
         }
     }
 }

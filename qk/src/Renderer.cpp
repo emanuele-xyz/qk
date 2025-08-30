@@ -1321,6 +1321,7 @@ namespace qk
         d11::ConstantBuffer m_cb_object;
         d11::StructuredBuffer m_sb_point_lights;
         d11::StructuredBuffer m_sb_spot_lights;
+        d11::Buffer2D m_wboit_accum_reveal_buffer;
         std::vector<Object> m_transparent_objects;
     };
     ObjectPass::ObjectPass(ID3D11Device* dev, ID3D11DeviceContext* ctx, const std::vector<Mesh>& meshes, const std::vector<Texture>& textures)
@@ -1342,6 +1343,7 @@ namespace qk
         , m_cb_object{}
         , m_sb_point_lights{ dev, sizeof(ObjectPassPointLight) }
         , m_sb_spot_lights{ dev, sizeof(ObjectPassSpotLight) }
+        , m_wboit_accum_reveal_buffer{ dev, DXGI_FORMAT_R16G16B16A16_FLOAT, D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET }
         , m_transparent_objects{}
     {
         #include <qk/hlsl/ObjectPassVS.h>
@@ -1450,6 +1452,22 @@ namespace qk
     }
     void ObjectPass::Render(int w, int h, ID3D11RenderTargetView* rtv, ID3D11DepthStencilView* dsv, const Scene& scene)
     {
+        switch (scene.settings.transparency)
+        {
+        case SceneTransparencyTechnique::Sorted:
+        {
+            m_wboit_accum_reveal_buffer.Free();
+        } break;
+        case SceneTransparencyTechnique::WeightedBlendedOIT:
+        {
+            m_wboit_accum_reveal_buffer.Resize(w, h);
+        } break;
+        default:
+        {
+            qk_Unreachable();
+        } break;
+        }
+
         // upload scene constants
         {
             float aspect{ m_viewport.Width / m_viewport.Height };
@@ -1821,24 +1839,42 @@ namespace qk
                 m_ctx->PSSetConstantBuffers(0, std::size(cbufs), cbufs);
                 m_ctx->RSSetState(m_rs_fill_nocull.Get());
                 m_ctx->RSSetViewports(1, &m_viewport);
-                m_ctx->OMSetRenderTargets(1, &rtv, dsv);
                 m_ctx->OMSetDepthStencilState(m_dss_nowrite.Get(), 0);
-                m_ctx->OMSetBlendState(m_bs_over.Get(), nullptr, 0XFFFFFFFF);
+
+                switch (scene.settings.transparency)
+                {
+                case SceneTransparencyTechnique::Sorted:
+                {
+                    m_ctx->OMSetRenderTargets(1, &rtv, dsv);
+                    m_ctx->OMSetBlendState(m_bs_over.Get(), nullptr, 0XFFFFFFFF);
+                } break;
+                case SceneTransparencyTechnique::WeightedBlendedOIT:
+                {
+                    ID3D11RenderTargetView* wboit_accum_reveal_rtv{ m_wboit_accum_reveal_buffer.RTV() };
+                    m_ctx->OMSetRenderTargets(1, &wboit_accum_reveal_rtv, dsv);
+                    m_ctx->OMSetBlendState(m_bs_wboit_accum_reveal.Get(), nullptr, 0XFFFFFFFF); // TODO: to be impemented
+                } break;
+                default:
+                {
+                    qk_Unreachable();
+                } break;
+                }
             }
 
-            // create back to front sorted list of all objects that are neither fully opaque nor fully transparent
+            m_transparent_objects.clear(); // clear previously stored opauqe objects
+
+            // fetch all objects that are neither fully opaque nor fully transparent
+            for (const Object& obj : scene.objects)
             {
-                m_transparent_objects.clear(); // clear previously stored objects
-
-                // fetch all objects that are neither fully opaque nor fully transparent
-                for (const Object& obj : scene.objects)
+                if (0.0f < obj.opacity && obj.opacity < 1.0f)
                 {
-                    if (0.0f < obj.opacity && obj.opacity < 1.0f)
-                    {
-                        m_transparent_objects.emplace_back(obj);
-                    }
+                    m_transparent_objects.emplace_back(obj);
                 }
+            }
 
+            // sort transparent objects, if required
+            if (scene.settings.transparency == SceneTransparencyTechnique::Sorted)
+            {
                 // sorting back to front means that the one further from the camera should be rendered first (is "greater" than the other object)
                 auto cmp{ [&](const Object& a, const Object& b)
                 {
@@ -1916,6 +1952,12 @@ namespace qk
                     // draw
                     m_ctx->DrawIndexed(mesh.IndexCount(), 0, 0);
                 }
+            }
+
+            // if doing weighted blended OIT, we need to composite the result of the transparency pass with the opauqe buffer
+            if (scene.settings.transparency == SceneTransparencyTechnique::WeightedBlendedOIT)
+            {
+                // TODO: to be implemented
             }
         }
     }

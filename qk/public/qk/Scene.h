@@ -8,6 +8,18 @@
 
 namespace qk
 {
+    enum class SceneTransparencyTechnique
+    {
+        Sorted,
+        WeightedBlendedOIT,
+        Count
+    };
+
+    struct SceneSettings
+    {
+        SceneTransparencyTechnique transparency;
+    };
+
     struct Background
     {
         v4 color{ 1.0f, 0.0f, 1.0f, 1.0f };
@@ -65,6 +77,7 @@ namespace qk
 
     struct Scene
     {
+        SceneSettings settings;
         Background background{};
         Camera camera{};
         DirectionalLight directional_light{};

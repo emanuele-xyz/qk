@@ -109,32 +109,33 @@ namespace qk::d11
         wrl::ComPtr<ID3D11ShaderResourceView> m_srv;
     };
 
-    class Texture2D
+    class Buffer2D
     {
     public:
-        Texture2D(ID3D11Device* dev, const D3D11_TEXTURE2D_DESC* desc, const D3D11_SUBRESOURCE_DATA* data = nullptr);
-        ~Texture2D() = default;
-        Texture2D(const Texture2D&) = delete;
-        Texture2D(Texture2D&&) noexcept = default;
-        Texture2D& operator=(const Texture2D&) = delete;
-        Texture2D& operator=(Texture2D&&) noexcept = default;
+        Buffer2D(ID3D11Device* dev, DXGI_FORMAT format, UINT bind_flags, UINT w = 0, UINT h = 0, UINT cpu_access_flags = 0, UINT misc_flags = 0);
+        ~Buffer2D() = default;
+        Buffer2D(const Buffer2D&) = delete;
+        Buffer2D(Buffer2D&&) noexcept = default;
+        Buffer2D& operator=(const Buffer2D&) = delete;
+        Buffer2D& operator=(Buffer2D&&) noexcept = default;
     public:
         ID3D11RenderTargetView* RTV() const { qk_Check(m_rtv); return m_rtv.Get(); }
         ID3D11ShaderResourceView* SRV() const { qk_Check(m_srv); return m_srv.Get(); }
         ID3D11DepthStencilView* DSV() const { qk_Check(m_dsv); return m_dsv.Get(); }
     public:
         void Resize(UINT w, UINT h);
+        void Free();
     private:
-        void Init(const D3D11_TEXTURE2D_DESC* desc, const D3D11_SUBRESOURCE_DATA* data = nullptr);
+        void Init();
     private:
         ID3D11Device* m_dev;
+        D3D11_TEXTURE2D_DESC m_texture_desc;
         wrl::ComPtr<ID3D11Texture2D> m_texture;
         wrl::ComPtr<ID3D11RenderTargetView> m_rtv;
         wrl::ComPtr<ID3D11ShaderResourceView> m_srv;
         wrl::ComPtr<ID3D11DepthStencilView> m_dsv;
     };
 
-    // TODO: obsolete, replaced by Texture2D
     class DepthStencilBuffer
     {
     public:

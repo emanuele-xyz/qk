@@ -11,6 +11,18 @@ namespace qk_gui
     constexpr float CAMERA_MOVE_SPEED_MULTIPLIER{ 2.0f }; // TODO: make editable
     constexpr float CAMERA_LOOK_SPEED{ 2.0f }; // TODO: make editable
 
+    static const char* GetSceneTransparencyTechniqueStr(qk::SceneTransparencyTechnique technique)
+    {
+        const char* str{};
+        switch (technique)
+        {
+        case qk::SceneTransparencyTechnique::Sorted: { str = "Sorted"; } break;
+        case qk::SceneTransparencyTechnique::WeightedBlendedOIT: { str = "Weighted Blended OIT"; } break;
+        default: { qk_gui_Unreachable(); } break;
+        }
+        return str;
+    }
+
     Editor::Editor(const Keyboard& keyboard, const Mouse& mouse)
         : m_keyboard{ keyboard }
         , m_mouse{ mouse }
@@ -156,6 +168,28 @@ namespace qk_gui
             ImGuiTabBarFlags tab_bar_flags{ ImGuiTabBarFlags_None };
             if (ImGui::BeginTabBar("SceneTabBar", tab_bar_flags))
             {
+                if (ImGui::BeginTabItem("Settings"))
+                {
+                    if (ImGui::BeginCombo("Transparency", GetSceneTransparencyTechniqueStr(m_scene.settings.transparency)))
+                    {
+                        for (int n{}; n < static_cast<int>(qk::SceneTransparencyTechnique::Count); n++)
+                        {
+                            qk::SceneTransparencyTechnique n_technique{ static_cast<qk::SceneTransparencyTechnique>(n) };
+                            bool is_selected{ m_scene.settings.transparency == n_technique };
+                            if (ImGui::Selectable(GetSceneTransparencyTechniqueStr(n_technique), is_selected))
+                            {
+                                m_scene.settings.transparency = n_technique;
+                            }
+                            if (is_selected)
+                            {
+                                ImGui::SetItemDefaultFocus();
+                            }
+                        }
+                        ImGui::EndCombo();
+                    }
+
+                    ImGui::EndTabItem();
+                }
                 if (ImGui::BeginTabItem("Background"))
                 {
                     ImGui::ColorEdit3("Color", m_scene.background.color.elems);
