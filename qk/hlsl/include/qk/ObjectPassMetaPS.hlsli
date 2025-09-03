@@ -137,7 +137,11 @@ PSOutput main(VSOutput input)
     
 #ifdef QK_OBJECT_PASS_WBOIT
     {
-        output.color = float4(shaded * cb_object.opacity, cb_object.opacity) /* TODO: * weight(zi, ai) */;
+        float ai = cb_object.opacity;
+        float zi = input.clip_position.z;
+        float weight = ai * ai * (1/zi) * (1/zi) * (1/zi) * (1/zi);
+    
+        output.color = float4(shaded * cb_object.opacity, cb_object.opacity) * weight;
         output.reveal = cb_object.opacity;
     }
 #else
