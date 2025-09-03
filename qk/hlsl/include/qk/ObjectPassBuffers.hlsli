@@ -21,7 +21,7 @@ struct ObjectPassObjectConstants
     float albedo_mix;
     float opacity;
     int shading_mode;
-    float _pad[2];
+    float _pad0[2];
     struct
     {
         float3 direction;

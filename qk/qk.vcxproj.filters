@@ -62,10 +62,14 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="hlsl\include\qk\ObjectPass.hlsli" />
+    <None Include="hlsl\include\qk\ObjectPassMetaPS.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="hlsl\src\ObjectPassVS.hlsl" />
     <FxCompile Include="hlsl\src\ObjectPassPS.hlsl" />
+    <FxCompile Include="hlsl\src\WBOITCompositeVS.hlsl" />
+    <FxCompile Include="hlsl\src\WBOITCompositePS.hlsl" />
+    <FxCompile Include="hlsl\src\ObjectPassWBOITPS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="hlsl\include\qk\ObjectPassBuffers.hlsli" />

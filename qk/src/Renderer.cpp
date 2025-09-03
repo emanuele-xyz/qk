@@ -1309,19 +1309,26 @@ namespace qk
         const std::vector<Texture>& m_textures;
         D3D11_VIEWPORT m_viewport;
         wrl::ComPtr<ID3D11VertexShader> m_vs;
+        wrl::ComPtr<ID3D11VertexShader> m_vs_wboit_composite;
         wrl::ComPtr<ID3D11PixelShader> m_ps;
+        wrl::ComPtr<ID3D11PixelShader> m_ps_wboit;
+        wrl::ComPtr<ID3D11PixelShader> m_ps_wboit_composite;
         wrl::ComPtr<ID3D11InputLayout> m_il;
         wrl::ComPtr<ID3D11RasterizerState> m_rs_fill_cull;
         wrl::ComPtr<ID3D11RasterizerState> m_rs_fill_nocull;
         wrl::ComPtr<ID3D11RasterizerState> m_rs_wireframe;
         wrl::ComPtr<ID3D11DepthStencilState> m_dss_nowrite;
         wrl::ComPtr<ID3D11BlendState> m_bs_over;
-        wrl::ComPtr<ID3D11SamplerState> m_texture_ss;
+        wrl::ComPtr<ID3D11BlendState> m_bs_wboit_accum_reveal;
+        wrl::ComPtr<ID3D11BlendState> m_bs_wboit_composit;
+        wrl::ComPtr<ID3D11SamplerState> m_texture_ss; // TODO: rename to m_ss_linear
+        wrl::ComPtr<ID3D11SamplerState> m_ss_nearest;
         d11::ConstantBuffer m_cb_scene;
         d11::ConstantBuffer m_cb_object;
         d11::StructuredBuffer m_sb_point_lights;
         d11::StructuredBuffer m_sb_spot_lights;
-        d11::Buffer2D m_wboit_accum_reveal_buffer;
+        d11::Buffer2D m_wboit_accum_buffer;
+        d11::Buffer2D m_wboit_reveal_buffer;
         std::vector<Object> m_transparent_objects;
     };
     ObjectPass::ObjectPass(ID3D11Device* dev, ID3D11DeviceContext* ctx, const std::vector<Mesh>& meshes, const std::vector<Texture>& textures)
@@ -1331,7 +1338,10 @@ namespace qk
         , m_textures{ textures }
         , m_viewport{ .TopLeftX = 0.0f, .TopLeftY = 0.0f, .MinDepth = 0.0f, .MaxDepth = 1.0f }
         , m_vs{}
+        , m_vs_wboit_composite{}
         , m_ps{}
+        , m_ps_wboit{}
+        , m_ps_wboit_composite{}
         , m_il{}
         , m_rs_fill_cull{}
         , m_rs_fill_nocull{}
@@ -1339,21 +1349,36 @@ namespace qk
         , m_dss_nowrite{}
         , m_texture_ss{}
         , m_bs_over{}
+        , m_bs_wboit_accum_reveal{}
+        , m_bs_wboit_composit{}
         , m_cb_scene{}
         , m_cb_object{}
         , m_sb_point_lights{ dev, sizeof(ObjectPassPointLight) }
         , m_sb_spot_lights{ dev, sizeof(ObjectPassSpotLight) }
-        , m_wboit_accum_reveal_buffer{ dev, DXGI_FORMAT_R16G16B16A16_FLOAT, D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET }
+        , m_wboit_accum_buffer{ dev, DXGI_FORMAT_R16G16B16A16_FLOAT, D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET }
+        , m_wboit_reveal_buffer{ dev, DXGI_FORMAT_R16_FLOAT, D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET }
         , m_transparent_objects{}
     {
         #include <qk/hlsl/ObjectPassVS.h>
+        #include <qk/hlsl/WBOITCompositeVS.h>
         #include <qk/hlsl/ObjectPassPS.h>
+        #include <qk/hlsl/ObjectPassWBOITPS.h>
+        #include <qk/hlsl/WBOITCompositePS.h>
 
         // vertex shader
         qk_CheckHR(m_dev->CreateVertexShader(ObjectPassVS_bytes, sizeof(ObjectPassVS_bytes), nullptr, m_vs.ReleaseAndGetAddressOf()));
 
+        // vertex shader for wboit composite pass
+        qk_CheckHR(m_dev->CreateVertexShader(WBOITCompositeVS_bytes, sizeof(WBOITCompositeVS_bytes), nullptr, m_vs_wboit_composite.ReleaseAndGetAddressOf()));
+
         // pixel shader
         qk_CheckHR(m_dev->CreatePixelShader(ObjectPassPS_bytes, sizeof(ObjectPassPS_bytes), nullptr, m_ps.ReleaseAndGetAddressOf()));
+        
+        // pixel shader for wboit
+        qk_CheckHR(m_dev->CreatePixelShader(ObjectPassWBOITPS_bytes, sizeof(ObjectPassWBOITPS_bytes), nullptr, m_ps_wboit.ReleaseAndGetAddressOf()));
+
+        // pixel shader for wboit composite pass
+        qk_CheckHR(m_dev->CreatePixelShader(WBOITCompositePS_bytes, sizeof(WBOITCompositePS_bytes), nullptr, m_ps_wboit_composite.ReleaseAndGetAddressOf()));
 
         // input layout
         {
@@ -1418,6 +1443,48 @@ namespace qk
             qk_CheckHR(m_dev->CreateBlendState(&desc, m_bs_over.ReleaseAndGetAddressOf()));
         }
 
+        // blend state for the first pass of weighted blended oit
+        {
+            D3D11_BLEND_DESC desc{};
+            desc.AlphaToCoverageEnable = false;
+            desc.IndependentBlendEnable = true;
+            // blend state for wboit accum buffer
+            desc.RenderTarget[0].BlendEnable = true;
+            desc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
+            desc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
+            desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+            desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+            desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
+            desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+            desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+            // blend state for wboit reveal buffer
+            desc.RenderTarget[1].BlendEnable = true;
+            desc.RenderTarget[1].SrcBlend = D3D11_BLEND_ZERO;
+            desc.RenderTarget[1].DestBlend = D3D11_BLEND_INV_SRC_COLOR;
+            desc.RenderTarget[1].BlendOp = D3D11_BLEND_OP_ADD;
+            desc.RenderTarget[1].SrcBlendAlpha = D3D11_BLEND_ZERO;
+            desc.RenderTarget[1].DestBlendAlpha = D3D11_BLEND_ZERO;
+            desc.RenderTarget[1].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+            desc.RenderTarget[1].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+            qk_CheckHR(m_dev->CreateBlendState(&desc, m_bs_wboit_accum_reveal.ReleaseAndGetAddressOf()));
+        }
+
+        // blend state for the composite pass of wboit
+        {
+            D3D11_BLEND_DESC desc{};
+            desc.AlphaToCoverageEnable = false;
+            desc.IndependentBlendEnable = false;
+            desc.RenderTarget[0].BlendEnable = true;
+            desc.RenderTarget[0].SrcBlend = D3D11_BLEND_INV_SRC_ALPHA;
+            desc.RenderTarget[0].DestBlend = D3D11_BLEND_SRC_ALPHA;
+            desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+            desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ZERO;
+            desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
+            desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+            desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+            qk_CheckHR(m_dev->CreateBlendState(&desc, m_bs_wboit_composit.ReleaseAndGetAddressOf()));
+        }
+
         // depth stencil state (perform depth testing but disable writes to the depth buffer)
         {
             D3D11_DEPTH_STENCIL_DESC desc{};
@@ -1444,6 +1511,23 @@ namespace qk
             qk_CheckHR(m_dev->CreateSamplerState(&desc, m_texture_ss.ReleaseAndGetAddressOf()));
         }
 
+        // sampler state used for wboit composite pass
+        {
+            D3D11_SAMPLER_DESC desc{};
+            desc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+            desc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+            desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+            desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+            //desc.MaxAnisotropy = ;
+            desc.BorderColor[0] = 0.0f;
+            desc.BorderColor[1] = 0.0f;
+            desc.BorderColor[2] = 0.0f;
+            desc.BorderColor[3] = 0.0f;
+            desc.MinLOD = 0;
+            desc.MaxLOD = D3D11_FLOAT32_MAX;
+            qk_CheckHR(m_dev->CreateSamplerState(&desc, m_ss_nearest.ReleaseAndGetAddressOf()));
+        }
+
         // scene constant buffer
         m_cb_scene = d11::ConstantBuffer{ m_dev, sizeof(ObjectPassSceneConstants) };
 
@@ -1456,11 +1540,13 @@ namespace qk
         {
         case SceneTransparencyTechnique::Sorted:
         {
-            m_wboit_accum_reveal_buffer.Free();
+            m_wboit_accum_buffer.Free();
+            m_wboit_reveal_buffer.Free();
         } break;
         case SceneTransparencyTechnique::WeightedBlendedOIT:
         {
-            m_wboit_accum_reveal_buffer.Resize(w, h);
+            m_wboit_accum_buffer.Resize(w, h);
+            m_wboit_reveal_buffer.Resize(w, h);
         } break;
         default:
         {
@@ -1835,9 +1921,8 @@ namespace qk
                 m_ctx->IASetInputLayout(m_il.Get());
                 m_ctx->VSSetShader(m_vs.Get(), nullptr, 0);
                 m_ctx->VSSetConstantBuffers(0, std::size(cbufs), cbufs);
-                m_ctx->PSSetShader(m_ps.Get(), nullptr, 0);
                 m_ctx->PSSetConstantBuffers(0, std::size(cbufs), cbufs);
-                m_ctx->RSSetState(m_rs_fill_nocull.Get());
+                m_ctx->RSSetState(m_rs_fill_cull.Get());
                 m_ctx->RSSetViewports(1, &m_viewport);
                 m_ctx->OMSetDepthStencilState(m_dss_nowrite.Get(), 0);
 
@@ -1845,14 +1930,28 @@ namespace qk
                 {
                 case SceneTransparencyTechnique::Sorted:
                 {
+                    m_ctx->PSSetShader(m_ps.Get(), nullptr, 0);
                     m_ctx->OMSetRenderTargets(1, &rtv, dsv);
                     m_ctx->OMSetBlendState(m_bs_over.Get(), nullptr, 0XFFFFFFFF);
                 } break;
                 case SceneTransparencyTechnique::WeightedBlendedOIT:
                 {
-                    ID3D11RenderTargetView* wboit_accum_reveal_rtv{ m_wboit_accum_reveal_buffer.RTV() };
-                    m_ctx->OMSetRenderTargets(1, &wboit_accum_reveal_rtv, dsv);
-                    m_ctx->OMSetBlendState(m_bs_wboit_accum_reveal.Get(), nullptr, 0XFFFFFFFF); // TODO: to be impemented
+                    ID3D11RenderTargetView* rtvs[]{ m_wboit_accum_buffer.RTV(), m_wboit_reveal_buffer.RTV() };
+
+                    // clear accum buffer
+                    {
+                        float clear[4]{ 0.0f, 0.0f, 0.0f, 0.0f };
+                        m_ctx->ClearRenderTargetView(m_wboit_accum_buffer.RTV(), clear);
+                    }
+                    // clear reveal buffer
+                    {
+                        float clear[4]{ 1.0f, 0.0f, 0.0f, 0.0f };
+                        m_ctx->ClearRenderTargetView(m_wboit_reveal_buffer.RTV(), clear);
+                    }
+
+                    m_ctx->PSSetShader(m_ps_wboit.Get(), nullptr, 0);
+                    m_ctx->OMSetRenderTargets(std::size(rtvs), rtvs, dsv);
+                    m_ctx->OMSetBlendState(m_bs_wboit_accum_reveal.Get(), nullptr, 0XFFFFFFFF);
                 } break;
                 default:
                 {
@@ -1890,12 +1989,13 @@ namespace qk
                 std::sort(m_transparent_objects.begin(), m_transparent_objects.end(), cmp);
             }
 
-            // loop over each object node and render it
+            // loop over each transparent object  and render it
             for (const Object& object : m_transparent_objects)
             {
                 // if either the object is fully opauqe or fully transparent, skip it
                 if (object.opacity == 1.0f || object.opacity == 0.0f)
                 {
+                    std::cout << "[WARNING]: rendering a fully " << ((object.opacity == 1.0f) ? "opaque" : "transparent") << " object\n";
                     continue;
                 }
 
@@ -1957,7 +2057,37 @@ namespace qk
             // if doing weighted blended OIT, we need to composite the result of the transparency pass with the opauqe buffer
             if (scene.settings.transparency == SceneTransparencyTechnique::WeightedBlendedOIT)
             {
-                // TODO: to be implemented
+                // prepare pipeline state and draw
+                {
+                    // fetch quad mesh
+                    const Mesh& mesh{ m_meshes.at(static_cast<std::size_t>(QUAD)) };
+
+                    // prepare mesh related data for pipeline state
+                    ID3D11Buffer* vertices{ mesh.Vertices() };
+                    UINT vertex_stride{ sizeof(MeshVertex) };
+                    UINT vertex_offset{};
+
+                    // prepare texture related data for pipeline state
+                    ID3D11SamplerState* ss{ m_ss_nearest.Get() };
+                    ID3D11ShaderResourceView* srvs[]{ m_wboit_accum_buffer.SRV(), m_wboit_reveal_buffer.SRV() };
+
+                    m_ctx->ClearState();
+                    m_ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+                    m_ctx->IASetInputLayout(m_il.Get());
+                    m_ctx->IASetIndexBuffer(mesh.Indices(), MESH_INDEX_FORMAT, 0);
+                    m_ctx->IASetVertexBuffers(0, 1, &vertices, &vertex_stride, &vertex_offset);
+                    m_ctx->VSSetShader(m_vs_wboit_composite.Get(), nullptr, 0); // TODO: to be implemented
+                    m_ctx->PSSetShader(m_ps_wboit_composite.Get(), nullptr, 0); // TODO: to be implemented
+                    m_ctx->PSSetSamplers(0, 1, &ss);
+                    m_ctx->PSSetShaderResources(0, std::size(srvs), srvs);
+                    m_ctx->RSSetState(m_rs_fill_cull.Get());
+                    m_ctx->RSSetViewports(1, &m_viewport);
+                    m_ctx->OMSetRenderTargets(1, &rtv, nullptr);
+                    m_ctx->OMSetBlendState(m_bs_wboit_composit.Get(), nullptr, 0XFFFFFFFF);
+
+                    // draw
+                    m_ctx->DrawIndexed(mesh.IndexCount(), 0, 0);
+                }
             }
         }
     }

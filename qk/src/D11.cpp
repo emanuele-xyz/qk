@@ -177,6 +177,10 @@ namespace qk::d11
         m_rtv.Reset();
         m_srv.Reset();
         m_dsv.Reset();
+
+        // since buffer is empty, its resolution should be 0x0
+        m_texture_desc.Width = 0;
+        m_texture_desc.Height = 0;
     }
     void Buffer2D::Init()
     {
