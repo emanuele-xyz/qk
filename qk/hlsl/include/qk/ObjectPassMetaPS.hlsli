@@ -137,9 +137,10 @@ PSOutput main(VSOutput input)
     
 #ifdef QK_OBJECT_PASS_WBOIT
     {
+        // NOTE: weight function from https://casual-effects.blogspot.com/2015/03/implemented-weighted-blended-order.html
         float ai = cb_object.opacity;
         float zi = input.clip_position.z;
-        float weight = ai * ai * (1/zi) * (1/zi) * (1/zi) * (1/zi);
+        float weight = clamp(pow(min(1.0, ai * 10.0) + 0.01, 3.0) * 1e8 * pow(1.0 - zi * 0.9, 3.0), 1e-2, 3e3);
     
         output.color = float4(shaded * cb_object.opacity, cb_object.opacity) * weight;
         output.reveal = cb_object.opacity;
