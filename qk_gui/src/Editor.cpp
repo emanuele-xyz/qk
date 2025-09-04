@@ -170,6 +170,7 @@ namespace qk_gui
             {
                 if (ImGui::BeginTabItem("Settings"))
                 {
+                    ImGui::DragFloat("Gamma", &m_scene.settings.gamma, 0.1f, 0.0f, std::numeric_limits<float>::max());
                     if (ImGui::BeginCombo("Transparency", GetSceneTransparencyTechniqueStr(m_scene.settings.transparency)))
                     {
                         for (int n{}; n < static_cast<int>(qk::SceneTransparencyTechnique::Count); n++)

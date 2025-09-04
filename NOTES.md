@@ -129,6 +129,6 @@ Punctual lights:
 
 ## Display Encoding
 
-- take shader output colors and raise them by a power of 1/`gamma`.
+- take shader output colors and raise them by a power of `1/gamma`.
 - take shader input colors and raise them by a power of `gamma`.
 - usaually `gamma = 2.2`

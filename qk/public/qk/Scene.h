@@ -17,7 +17,8 @@ namespace qk
 
     struct SceneSettings
     {
-        SceneTransparencyTechnique transparency;
+        float gamma{ 2.2f };
+        SceneTransparencyTechnique transparency{ SceneTransparencyTechnique::Sorted };
     };
 
     struct Background

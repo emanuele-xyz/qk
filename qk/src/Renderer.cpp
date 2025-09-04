@@ -9,10 +9,12 @@ using Matrix = DirectX::SimpleMath::Matrix;
 using Vector3 = DirectX::SimpleMath::Vector3;
 namespace dx = DirectX; // for DirectX namespace included by DirectXMath (included by SimpleMath)
 
+// constant buffers definitions
 #define int std::int32_t
 #define matrix Matrix
 #define float3 Vector3
 #include <qk/hlsl/ObjectPassBuffers.h>
+#include <qk/hlsl/WBOITCompositeBuffers.h>
 #undef float3
 #undef matrix
 #undef int
@@ -1325,6 +1327,7 @@ namespace qk
         wrl::ComPtr<ID3D11SamplerState> m_ss_nearest;
         d11::ConstantBuffer m_cb_scene;
         d11::ConstantBuffer m_cb_object;
+        d11::ConstantBuffer m_cb_wboit_composite;
         d11::StructuredBuffer m_sb_point_lights;
         d11::StructuredBuffer m_sb_spot_lights;
         d11::Buffer2D m_wboit_accum_buffer;
@@ -1353,6 +1356,7 @@ namespace qk
         , m_bs_wboit_composit{}
         , m_cb_scene{}
         , m_cb_object{}
+        , m_cb_wboit_composite{}
         , m_sb_point_lights{ dev, sizeof(ObjectPassPointLight) }
         , m_sb_spot_lights{ dev, sizeof(ObjectPassSpotLight) }
         , m_wboit_accum_buffer{ dev, DXGI_FORMAT_R16G16B16A16_FLOAT, D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET }
@@ -1373,7 +1377,7 @@ namespace qk
 
         // pixel shader
         qk_CheckHR(m_dev->CreatePixelShader(ObjectPassPS_bytes, sizeof(ObjectPassPS_bytes), nullptr, m_ps.ReleaseAndGetAddressOf()));
-        
+
         // pixel shader for wboit
         qk_CheckHR(m_dev->CreatePixelShader(ObjectPassWBOITPS_bytes, sizeof(ObjectPassWBOITPS_bytes), nullptr, m_ps_wboit.ReleaseAndGetAddressOf()));
 
@@ -1533,6 +1537,9 @@ namespace qk
 
         // object constant buffer
         m_cb_object = d11::ConstantBuffer{ m_dev,sizeof(ObjectPassObjectConstants) };
+
+        // wboit composite pass constant buffer
+        m_cb_wboit_composite = d11::ConstantBuffer{ m_dev, sizeof(WBOITCompositeConstants) };
     }
     void ObjectPass::Render(int w, int h, ID3D11RenderTargetView* rtv, ID3D11DepthStencilView* dsv, const Scene& scene)
     {
@@ -1567,6 +1574,7 @@ namespace qk
             constants->projection = projection;
             constants->point_lights_count = static_cast<std::int32_t>(scene.point_lights.size());
             constants->spot_lights_count = static_cast<std::int32_t>(scene.spot_lights.size());
+            constants->gamma = scene.settings.gamma;
         }
 
         // resize point lights structured buffer, if necessary
@@ -2057,8 +2065,17 @@ namespace qk
             // if doing weighted blended OIT, we need to composite the result of the transparency pass with the opauqe buffer
             if (scene.settings.transparency == SceneTransparencyTechnique::WeightedBlendedOIT)
             {
+                // upload constants
+                {
+                    d11::SubresourceMap map{ m_cb_wboit_composite.Map(D3D11_MAP_WRITE_DISCARD) };
+                    auto constants{ map.Data<WBOITCompositeConstants>() };
+                    constants->gamma = scene.settings.gamma;
+                }
+
                 // prepare pipeline state and draw
                 {
+                    ID3D11Buffer* cb{ m_cb_wboit_composite.Get() };
+
                     // fetch quad mesh
                     const Mesh& mesh{ m_meshes.at(static_cast<std::size_t>(QUAD)) };
 
@@ -2076,8 +2093,10 @@ namespace qk
                     m_ctx->IASetInputLayout(m_il.Get());
                     m_ctx->IASetIndexBuffer(mesh.Indices(), MESH_INDEX_FORMAT, 0);
                     m_ctx->IASetVertexBuffers(0, 1, &vertices, &vertex_stride, &vertex_offset);
-                    m_ctx->VSSetShader(m_vs_wboit_composite.Get(), nullptr, 0); // TODO: to be implemented
-                    m_ctx->PSSetShader(m_ps_wboit_composite.Get(), nullptr, 0); // TODO: to be implemented
+                    m_ctx->VSSetShader(m_vs_wboit_composite.Get(), nullptr, 0);
+                    m_ctx->VSSetConstantBuffers(0, 1, &cb);
+                    m_ctx->PSSetShader(m_ps_wboit_composite.Get(), nullptr, 0);
+                    m_ctx->PSSetConstantBuffers(0, 1, &cb);
                     m_ctx->PSSetSamplers(0, 1, &ss);
                     m_ctx->PSSetShaderResources(0, std::size(srvs), srvs);
                     m_ctx->RSSetState(m_rs_fill_cull.Get());

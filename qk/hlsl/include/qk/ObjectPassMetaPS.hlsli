@@ -2,6 +2,7 @@
 #define __QK_OBJECT_PASS_META_PS__
 
 #include <qk/ObjectPass.hlsli>
+#include <qk/GammaCorrect.hlsli>
 
 /*
     Lambert's illumination model
@@ -67,7 +68,11 @@ PSOutput main(VSOutput input)
     float3 albedo = float3(0, 0, 0);
     {
         float3 albedo_color = cb_object.albedo_color;
+        albedo_color = gamma_correct_to_linear(albedo_color, cb_scene.gamma);
+        
         float3 albedo_sample = albedo_texture.Sample(albedo_sampler, input.uv).xyz;
+        albedo_sample = gamma_correct_to_linear(albedo_sample, cb_scene.gamma);
+        
         albedo = lerp(albedo_color, albedo_sample, cb_object.albedo_mix);
     }
     
@@ -85,6 +90,7 @@ PSOutput main(VSOutput input)
         {
             float3 l = normalize(-cb_object.directional_light.direction); // negate the directional light direction
             float3 c_light = cb_object.directional_light.color;
+            c_light = gamma_correct_to_linear(c_light, cb_scene.gamma);
             shaded += lambert(l, n, c_light, albedo);
         }
 
@@ -98,6 +104,7 @@ PSOutput main(VSOutput input)
                 float r = length(d);
                 float3 l = d / r;
                 float3 c_light = point_light.color;
+                c_light = gamma_correct_to_linear(c_light, cb_scene.gamma);
                 {
                     float r_min = point_light.r_min;
                     float r_max = point_light.r_max;
@@ -117,6 +124,7 @@ PSOutput main(VSOutput input)
                 float r = length(d);
                 float3 l = d / r;
                 float3 c_light = spot_light.color;
+                c_light = gamma_correct_to_linear(c_light, cb_scene.gamma);
                 {
                     float r_min = spot_light.r_min;
                     float r_max = spot_light.r_max;
@@ -147,6 +155,7 @@ PSOutput main(VSOutput input)
     }
 #else
     {
+        shaded = gamma_correct_to_gamma(shaded, cb_scene.gamma);
         output.color = float4(shaded, cb_object.opacity);
     }
 #endif

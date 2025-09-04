@@ -2,13 +2,7 @@
 #define __QK_OBJECT_PASS__
 
 #include <qk/ObjectPassBuffers.hlsli>
-
-struct VSInput
-{
-    float3 local_position : POSITION;
-    float3 local_normal : NORMAL;
-    float2 uv : TEXCOORD;
-};
+#include <qk/VSInput.hlsli>
 
 struct VSOutput
 {

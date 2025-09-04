@@ -1,15 +1,4 @@
-struct VSInput
-{
-    float3 local_position : POSITION;
-    float3 local_normal : NORMAL;
-    float2 uv : TEXCOORD;
-};
-
-struct VSOutput
-{
-    float4 clip_position : SV_POSITION;
-    float2 uv : TEXCOORD;
-};
+#include <qk/WBOITComposite.hlsli>
 
 VSOutput main(VSInput input)
 {
@@ -20,4 +9,3 @@ VSOutput main(VSInput input)
     
     return output;
 }
-
