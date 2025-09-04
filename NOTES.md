@@ -126,3 +126,9 @@ Punctual lights:
 - Weighted average, for identical alphas, blends all colors equally, regardless of order.
 - Weighted blended OIT was introduced to give a more convincing result. The distance to the surface also affects the weight, with closer surfaces being given more influence. `u` is also computed by multiplying together the terms `1-alpha_i` together and subtracting from one, giving the true alpha coverage of the set of surfaces.
 - McGuire and Mara extend this method.
+
+## Display Encoding
+
+- take shader output colors and raise them by a power of 1/`gamma`.
+- take shader input colors and raise them by a power of `gamma`.
+- usaually `gamma = 2.2`
