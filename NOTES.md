@@ -132,3 +132,71 @@ Punctual lights:
 - take shader output colors and raise them by a power of `1/gamma`.
 - take shader input colors and raise them by a power of `gamma`.
 - usaually `gamma = 2.2`
+
+# Texturing
+
+## Image Texturing
+
+### Magnification
+
+- Magnification happens when there are more fragments sampling the texture than texels in the texture.
+- Solution: filtering; two most common solutions are nearest and bilinear (sometimes called linear) filtering.
+
+### Minification
+
+- Minification happens when there are less fragments sampling the texture than texels in the texture.
+- This means that we are undersampling the texture: we suffer from aliasing.
+- Most common solution: mipmapping.
+- Mipmapping builds a chain of mip levels. Level zero is the original texture.
+- Level n+1 is built starting from level n, halving its resolution, averaging the colors of all pixels of each 2x2 block of level n into a single pixel of level n+1.
+- The GPU selects the mipmap level whose number of texels is closest to the number of fragments sampling the texture.
+- To build mip levels we can also use gaussiam, lanczos, kaiser or similar filters.
+- If we have sRGB textures, we first must map colors to linear space, build the mip chain, and then convert each level into sRGB space.
+- The most common filtering method used with mipmaps is trilinear interpolation.
+- One problem of mipmapping is overblurring.
+- This is evident looking at a mipmapped textured surface at a grazing viewing angle.
+- An alternative to mipmapping is using summed area tables (which is anisotropic) (still suffers from overblurring).
+- To fix overblurring, anisotropic filtering is used.
+
+### Volume Textures
+
+- Volume textures are 3d textures, sampled using a set of 3 texture coordinates.
+- A volumetric light can be represented as a 3d texture. It assigns an amount of light to each point in the volume.
+- Mipmapping is supported.
+- We can use 3d vertex coordinates to directly sample a 3d texture.
+
+### Cube Maps
+
+- A cube map is made up of siz textures, one for each side of a cube.
+- A cube map is sampled using a 3d direction vector.
+- We shoot a ray from the center of the cube along the passed direction and we find the intersection point.
+- THe result of sampling is the color at the found intersection point.
+- Most commonly used for environment mapping.
+
+### Texture Representation
+
+- Switching textures is inefficient for the graphics pipeline.
+- We can put several textures into a single larger texture, called a texture atlas.
+- We need to take special care when generating mipmaps for texture atlases.
+- Wrap, repeat and mirroring modes when sampling a texture atlas may cause problems.
+- A simpler solution to texture atlases are texture arrays. Texture arrays avoid all the problems of texture atlases.
+- All textures of a texture array must have the same dimensions. This wasn't the case for texture atlases.
+- We can also use bindless textures, to avoid having to explicitly bind textures when rendering.
+
+### Texture Compression
+
+- GPUs can decode on the fly block compressed textures.
+- Block compression is lossy.
+- There are various block compression formats, depending on the need.
+- Compression of normal maps require some care.
+- Compressed formats designed for RGB colors do not work well for normals.
+- Most approaches suppose the normal to be unit length and that its z component is positive.
+- This allows for only storing the x and y components of a normal.
+- `z = sqrt(1 - x^2 - y^2)`
+- We can then compress the x and y components texture using BC5.
+
+## Procedural Texturing
+
+- Procedural textures make good volume textures.
+- Noise is an essential component of procedural texturing.
+- Combining multiple octaves of noise makes a
