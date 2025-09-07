@@ -200,3 +200,17 @@ Punctual lights:
 - Procedural textures make good volume textures.
 - Noise is an essential component of procedural texturing.
 - Combining multiple octaves of noise makes a
+
+## Texture Animation
+
+- We can offset the uvs of a mesh to animate a texture over time/space.
+- We can apply a matrix to the uvs to get zoom, rotation, shearing and so on.
+- We can also blend between textures.
+
+## Material Mapping
+
+- We can use textures to modify the properties of the surface material.
+- We can use a texture to change the surface color (this is called albedo color map or diffuse color map).
+- We can also use a texture to change the shading equation we are evaluating for a surface point.
+- Textures having linear inputs (color) to the final pixel color can be filtered normally.
+- Textures having non-linear inputs (roughness, bump) to the final pixel color require care.
