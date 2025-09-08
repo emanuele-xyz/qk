@@ -2125,6 +2125,7 @@ namespace qk::r3d
         , m_object_pass{ m_dev, m_ctx, m_meshes, m_textures }
     {
         // upload default meshes
+        // TODO: make it less boilerplaty
         {
             {
                 size_t idx{ m_meshes.size() };
@@ -2153,6 +2154,7 @@ namespace qk::r3d
             }
         }
         // upload ddefault textures
+        // TODO: make it less boilerplaty
         {
             {
                 size_t idx{ m_textures.size() };
