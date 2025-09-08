@@ -1323,8 +1323,7 @@ namespace qk::r3d
         d11::ConstantBuffer m_cb_scene;
         d11::ConstantBuffer m_cb_object;
         d11::ConstantBuffer m_cb_wboit_composite;
-        d11::StructuredBuffer m_sb_point_lights;
-        d11::StructuredBuffer m_sb_spot_lights;
+        d11::StructuredBuffer m_sb_lights;
         d11::Buffer2D m_wboit_accum_buffer;
         d11::Buffer2D m_wboit_reveal_buffer;
         std::vector<Object> m_transparent_objects;
@@ -1352,8 +1351,7 @@ namespace qk::r3d
         , m_cb_scene{}
         , m_cb_object{}
         , m_cb_wboit_composite{}
-        , m_sb_point_lights{ dev, sizeof(ObjectPassPointLight) }
-        , m_sb_spot_lights{ dev, sizeof(ObjectPassSpotLight) }
+        , m_sb_lights{ dev, sizeof(ObjectPassLight) }
         , m_wboit_accum_buffer{ dev, DXGI_FORMAT_R16G16B16A16_FLOAT, D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET }
         , m_wboit_reveal_buffer{ dev, DXGI_FORMAT_R16_FLOAT, D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET }
         , m_transparent_objects{}
@@ -1567,53 +1565,39 @@ namespace qk::r3d
             auto constants{ map.Data<ObjectPassSceneConstants>() };
             constants->view = view;
             constants->projection = projection;
-            constants->point_lights_count = static_cast<std::int32_t>(scene.point_lights.size());
-            constants->spot_lights_count = static_cast<std::int32_t>(scene.spot_lights.size());
+            constants->lights_count = static_cast<std::int32_t>(scene.lights.size());
             constants->gamma = scene.settings.gamma;
         }
 
-        // resize point lights structured buffer, if necessary
+        // resize lights structured buffer, if necessary
         // TODO: why not GrowToFit? only resize if the new size is bigger than the current size
-        m_sb_point_lights.Resize(static_cast<UINT>(scene.point_lights.size() * sizeof(ObjectPassPointLight)));
+        m_sb_lights.Resize(static_cast<UINT>(scene.lights.size() * sizeof(ObjectPassLight)));
 
-        // upload point lights
-        if (m_sb_point_lights)
+        // upload lights
+        if (m_sb_lights)
         {
-            d11::SubresourceMap map{ m_sb_point_lights.Map(D3D11_MAP_WRITE_DISCARD) };
-            auto constants{ map.Data<ObjectPassPointLight>() };
+            d11::SubresourceMap map{ m_sb_lights.Map(D3D11_MAP_WRITE_DISCARD) };
+            auto constants{ map.Data<ObjectPassLight>() };
 
-            for (std::size_t i{}; i < scene.point_lights.size(); i++)
+            for (std::size_t i{}; i < scene.lights.size(); i++)
             {
-                const PointLight& point_light{ scene.point_lights[i] };
+                const Light& light{ scene.lights[i] };
 
-                constants[i].world_position = point_light.position;
-                constants[i].color = point_light.color;
-                constants[i].r_min = point_light.r_min;
-                constants[i].r_max = point_light.r_max;
-            }
-        }
+                switch (light.type)
+                {
+                case LightType::Directional: { constants[i].type = QK_OBJECT_PASS_LIGHT_DIRECTIONAL; } break;
+                case LightType::Point: { constants[i].type = QK_OBJECT_PASS_LIGHT_POINT; } break;
+                case LightType::Spot: { constants[i].type = QK_OBJECT_PASS_LIGHT_SPOT; } break;
+                default: { qk_Unreachable(); } break;
+                }
 
-        // resize spot lights structured buffer if necessary
-        // TODO: why not GrowToFit? only resize if the new size is bigger than the current size
-        m_sb_spot_lights.Resize(static_cast<UINT>(scene.spot_lights.size() * sizeof(ObjectPassSpotLight)));
-
-        // upload spot lights
-        if (m_sb_spot_lights)
-        {
-            d11::SubresourceMap map{ m_sb_spot_lights.Map(D3D11_MAP_WRITE_DISCARD) };
-            auto constants{ map.Data<ObjectPassSpotLight>() };
-
-            for (std::size_t i{}; i < scene.spot_lights.size(); i++)
-            {
-                const SpotLight& spot_light{ scene.spot_lights[i] };
-
-                constants[i].world_position = spot_light.position;
-                constants[i].direction = spot_light.direction;
-                constants[i].color = spot_light.color;
-                constants[i].r_min = spot_light.r_min;
-                constants[i].r_max = spot_light.r_max;
-                constants[i].umbra_rad = dx::XMConvertToRadians(spot_light.umbra_angle_deg);
-                constants[i].penumbra_rad = dx::XMConvertToRadians(spot_light.penumbra_angle_deg);
+                constants[i].world_position = light.position;
+                constants[i].direction = light.direction;
+                constants[i].color = light.color;
+                constants[i].r_min = light.r_min;
+                constants[i].r_max = light.r_max;
+                constants[i].umbra_rad = dx::XMConvertToRadians(light.umbra_angle_deg);
+                constants[i].penumbra_rad = dx::XMConvertToRadians(light.penumbra_angle_deg);
             }
         }
 
@@ -1665,14 +1649,17 @@ namespace qk::r3d
 
                     d11::SubresourceMap map{ m_cb_object.Map(D3D11_MAP_WRITE_DISCARD) };
                     auto constants{ map.Data<ObjectPassObjectConstants>() };
-                    constants->shading_mode = QK_OBJECT_PASS_OBJECT_CONSTANT_SHADING_MODE_SHADED;
+                    switch (object.shading_mode)
+                    {
+                    case ShadingMode::Flat: { constants->shading_mode = QK_OBJECT_PASS_SHADING_MODE_FLAT; } break;
+                    case ShadingMode::Shaded: { constants->shading_mode = QK_OBJECT_PASS_SHADING_MODE_SHADED; } break;
+                    default: { qk_Unreachable(); } break;
+                    }
                     constants->model = model;
                     constants->normal = normal;
                     constants->albedo_color = object.albedo_color;
                     constants->albedo_mix = object.albedo_mix;
                     constants->opacity = object.opacity;
-                    constants->directional_light.direction = scene.directional_light.direction;
-                    constants->directional_light.color = scene.directional_light.color;
                 }
 
                 // set mesh related pipeline state and submit draw call
@@ -1690,7 +1677,7 @@ namespace qk::r3d
 
                     // prepare texture related data for pipeline state
                     ID3D11SamplerState* sss[]{ m_texture_ss.Get() };
-                    ID3D11ShaderResourceView* srvs[]{ albedo.SRV(), m_sb_point_lights.SRV(), m_sb_spot_lights.SRV() };
+                    ID3D11ShaderResourceView* srvs[]{ albedo.SRV(), m_sb_lights.SRV() };
 
                     // set pipeline state
                     m_ctx->IASetIndexBuffer(mesh.Indices(), MESH_INDEX_FORMAT, 0);
@@ -1710,7 +1697,7 @@ namespace qk::r3d
             {
                 ID3D11Buffer* cbufs[]{ m_cb_scene.Get(), m_cb_object.Get() };
                 ID3D11SamplerState* sss[]{ m_texture_ss.Get() }; // TODO: this is useful for shutting up warnings
-                ID3D11ShaderResourceView* srvs[]{ m_textures.at(static_cast<size_t>(ALBEDO_BLACK)).SRV(), m_sb_point_lights.SRV(), m_sb_spot_lights.SRV() }; // TODO: this is useful for shutting up warnings
+                ID3D11ShaderResourceView* srvs[]{ m_textures.at(static_cast<size_t>(ALBEDO_BLACK)).SRV(), m_sb_lights.SRV(), }; // TODO: this is useful for shutting up warnings
 
                 // set pipeline state
                 m_ctx->ClearState();
@@ -1745,23 +1732,23 @@ namespace qk::r3d
                     m_ctx->RSSetState(m_rs_wireframe.Get());
                 }
 
-                for (const PointLight& point_light : scene.point_lights)
+                for (const Light& light : scene.lights)
                 {
-                    if (!point_light.render_gizmos) continue;
+                    if (light.type != LightType::Point || !light.render_gizmos) continue;
 
                     // upload light source object constants
                     {
-                        float diameter{ point_light.r_min * 2.0f };
+                        float diameter{ light.r_min * 2.0f };
 
-                        Matrix translate{ Matrix::CreateTranslation(point_light.position) };
+                        Matrix translate{ Matrix::CreateTranslation(light.position) };
                         Matrix scale{ Matrix::CreateScale(Vector3{ diameter, diameter, diameter }) };
                         Matrix model{ scale * translate };
 
                         d11::SubresourceMap map{ m_cb_object.Map(D3D11_MAP_WRITE_DISCARD) };
                         auto constants{ map.Data<ObjectPassObjectConstants>() };
-                        constants->shading_mode = QK_OBJECT_PASS_OBJECT_CONSTANT_SHADING_MODE_FLAT;
+                        constants->shading_mode = QK_OBJECT_PASS_SHADING_MODE_FLAT;
                         constants->model = model;
-                        constants->albedo_color = point_light.color;
+                        constants->albedo_color = light.color;
                         constants->albedo_mix = 0.0f;
                         constants->opacity = 1.0f;
                     }
@@ -1771,17 +1758,17 @@ namespace qk::r3d
 
                     // upload light volume object constants
                     {
-                        float diameter{ point_light.r_max * 2.0f };
+                        float diameter{ light.r_max * 2.0f };
 
-                        Matrix translate{ Matrix::CreateTranslation(point_light.position) };
+                        Matrix translate{ Matrix::CreateTranslation(light.position) };
                         Matrix scale{ Matrix::CreateScale(Vector3{ diameter, diameter, diameter }) };
                         Matrix model{ scale * translate };
 
                         d11::SubresourceMap map{ m_cb_object.Map(D3D11_MAP_WRITE_DISCARD) };
                         auto constants{ map.Data<ObjectPassObjectConstants>() };
-                        constants->shading_mode = QK_OBJECT_PASS_OBJECT_CONSTANT_SHADING_MODE_FLAT;
+                        constants->shading_mode = QK_OBJECT_PASS_SHADING_MODE_FLAT;
                         constants->model = model;
-                        constants->albedo_color = point_light.color;
+                        constants->albedo_color = light.color;
                         constants->albedo_mix = 0.0f;
                         constants->opacity = 1.0f;
                     }
@@ -1809,9 +1796,9 @@ namespace qk::r3d
                     m_ctx->RSSetState(m_rs_wireframe.Get());
                 }
 
-                for (const SpotLight& spot_light : scene.spot_lights)
+                for (const Light& light : scene.lights)
                 {
-                    if (!spot_light.render_gizmos) continue;
+                    if (light.type != LightType::Spot || !light.render_gizmos) continue;
 
                     // for each spot light we render three cones: umbra, penumbra and near
                     constexpr int COUNT{ 3 };
@@ -1819,7 +1806,7 @@ namespace qk::r3d
                     // cones angles
                     // TODO: if we draw both umbra and penumbra cones, use the umbra cone angle as the near cone angle,
                     // TODO: if we draw just one of the two cones, use as near cone angle the angle of the cone we are drawing
-                    float angles_deg[COUNT]{ spot_light.umbra_angle_deg, spot_light.penumbra_angle_deg, spot_light.umbra_angle_deg };
+                    float angles_deg[COUNT]{ light.umbra_angle_deg, light.penumbra_angle_deg, light.umbra_angle_deg };
 
                     // convert umbra and penumbra angles to radians
                     float angles_rad[COUNT]{};
@@ -1829,7 +1816,7 @@ namespace qk::r3d
                     }
 
                     // y scaling factors for each cone
-                    float y_scales[COUNT]{ spot_light.r_max, spot_light.r_max, spot_light.r_min };
+                    float y_scales[COUNT]{ light.r_max, light.r_max, light.r_min };
 
                     // compute x and z scaling factors for each cone
                     float xz_scales[COUNT]{};
@@ -1846,10 +1833,10 @@ namespace qk::r3d
                             // move cone local space origin to cone peak
                             Matrix translate_0{ Matrix::CreateTranslation(Vector3{ 0.0f, -0.5f, 0.0f }) };
                             // translate cone peak to specified position
-                            Matrix translate_1{ Matrix::CreateTranslation(spot_light.position) };
+                            Matrix translate_1{ Matrix::CreateTranslation(light.position) };
                             Matrix rotate{};
                             {
-                                Vector3 direction{ spot_light.direction };
+                                Vector3 direction{ light.direction };
                                 direction.Normalize();
                                 Vector3 down{ 0.0f, -1.0f, 0.0f }; // local space cone's direction
 
@@ -1899,9 +1886,9 @@ namespace qk::r3d
 
                             d11::SubresourceMap map{ m_cb_object.Map(D3D11_MAP_WRITE_DISCARD) };
                             auto constants{ map.Data<ObjectPassObjectConstants>() };
-                            constants->shading_mode = QK_OBJECT_PASS_OBJECT_CONSTANT_SHADING_MODE_FLAT;
+                            constants->shading_mode = QK_OBJECT_PASS_SHADING_MODE_FLAT;
                             constants->model = model;
-                            constants->albedo_color = spot_light.color;
+                            constants->albedo_color = light.color;
                             constants->albedo_mix = 0.0f;
                             constants->opacity = 1.0f;
                         }
@@ -2019,14 +2006,17 @@ namespace qk::r3d
 
                     d11::SubresourceMap map{ m_cb_object.Map(D3D11_MAP_WRITE_DISCARD) };
                     auto constants{ map.Data<ObjectPassObjectConstants>() };
-                    constants->shading_mode = QK_OBJECT_PASS_OBJECT_CONSTANT_SHADING_MODE_SHADED;
+                    switch (object.shading_mode)
+                    {
+                    case ShadingMode::Flat: { constants->shading_mode = QK_OBJECT_PASS_SHADING_MODE_FLAT; } break;
+                    case ShadingMode::Shaded: { constants->shading_mode = QK_OBJECT_PASS_SHADING_MODE_SHADED; } break;
+                    default: { qk_Unreachable(); } break;
+                    }
                     constants->model = model;
                     constants->normal = normal;
                     constants->albedo_color = object.albedo_color;
                     constants->albedo_mix = object.albedo_mix;
                     constants->opacity = object.opacity;
-                    constants->directional_light.direction = scene.directional_light.direction;
-                    constants->directional_light.color = scene.directional_light.color;
                 }
 
                 // set mesh related pipeline state and submit draw call
@@ -2044,7 +2034,7 @@ namespace qk::r3d
 
                     // prepare texture related data for pipeline state
                     ID3D11SamplerState* sss[]{ m_texture_ss.Get() };
-                    ID3D11ShaderResourceView* srvs[]{ albedo.SRV(), m_sb_point_lights.SRV(), m_sb_spot_lights.SRV() };
+                    ID3D11ShaderResourceView* srvs[]{ albedo.SRV(), m_sb_lights.SRV() };
 
                     // set pipeline state
                     m_ctx->IASetIndexBuffer(mesh.Indices(), MESH_INDEX_FORMAT, 0);

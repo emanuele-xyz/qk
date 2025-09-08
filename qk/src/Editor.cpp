@@ -23,6 +23,29 @@ namespace qk
         }
         return str;
     }
+    static const char* GetLightTypeStr(r3d::LightType light_type)
+    {
+        const char* str{};
+        switch (light_type)
+        {
+        case r3d::LightType::Directional: { str = "Directional"; } break;
+        case r3d::LightType::Point: { str = "Point"; } break;
+        case r3d::LightType::Spot: { str = "Spot"; } break;
+        default: { qk_Unreachable(); } break;
+        }
+        return str;
+    }
+    static const char* GetShadingModeStr(r3d::ShadingMode shading_mode)
+    {
+        const char* str{};
+        switch (shading_mode)
+        {
+        case r3d::ShadingMode::Flat: { str = "Flat"; } break;
+        case r3d::ShadingMode::Shaded: { str = "Shaded"; } break;
+        default: { qk_Unreachable(); } break;
+        }
+        return str;
+    }
 
     Editor::Editor(const Keyboard& keyboard, const Mouse& mouse)
         : m_keyboard{ keyboard }
@@ -32,36 +55,47 @@ namespace qk
     {
         // TODO: to be removed
         {
-            m_scene.directional_light.color = Vector3{ 0.5f, 0.5f, 0.5f };
-            m_scene.directional_light.direction = Vector3{ 0.0f, -1.0f, 0.0f };
-
+            // lights
             {
-                r3d::PointLight point_light{};
+                r3d::Light light{};
 
-                point_light = r3d::PointLight{};
-                point_light.position = Vector3{ 3.0f, 2.0f, 1.0f };
-                point_light.r_max = 2.0f;
-                m_scene.point_lights.emplace_back(point_light);
+                // directional light
+                {
+                    light = {};
+                    light.type = r3d::LightType::Directional;
+                    light.color = Vector3{ 0.5f, 0.5f, 0.5f };
+                    light.direction = Vector3{ 0.0f, -1.0f, 0.0f };
+                    m_scene.lights.emplace_back(light);
+                }
+                // point lights
+                {
+                    light = {};
+                    light.type = r3d::LightType::Point;
+                    light.position = Vector3{ 3.0f, 2.0f, 1.0f };
+                    light.r_max = 2.0f;
+                    m_scene.lights.emplace_back(light);
 
-                point_light = r3d::PointLight{};
-                point_light.position = Vector3{ -3.0f, 2.0f, 1.0f };
-                point_light.r_max = 2.0f;
-                m_scene.point_lights.emplace_back(point_light);
+                    light = {};
+                    light.type = r3d::LightType::Point;
+                    light.position = Vector3{ -3.0f, 2.0f, 1.0f };
+                    light.r_max = 2.0f;
+                    m_scene.lights.emplace_back(light);
+                }
+                // spot lights
+                {
+                    light = {};
+                    light.type = r3d::LightType::Spot;
+                    light.position = Vector3{ 0.0f, 2.0f, 0.0f };
+                    light.r_max = 10.0f;
+                    m_scene.lights.emplace_back(light);
+                }
             }
-
-            {
-                r3d::SpotLight spot_light{};
-
-                spot_light = r3d::SpotLight{};
-                spot_light.position = Vector3{ 0.0f, 2.0f, 0.0f };
-                spot_light.r_max = 10.0f;
-                m_scene.spot_lights.emplace_back(spot_light);
-            }
-
+            // objects
             {
                 r3d::Object object{};
 
                 object = r3d::Object{};
+                object.shading_mode = r3d::ShadingMode::Shaded;
                 object.rotation = Vector3{ -90.0f, 0.0f, 0.0f };
                 object.scaling = Vector3{ 10.0f, 10.0f, 1.0f };
                 object.mesh_id = r3d::QUAD;
@@ -71,6 +105,7 @@ namespace qk
                 m_scene.objects.emplace_back(object);
 
                 object = r3d::Object{};
+                object.shading_mode = r3d::ShadingMode::Shaded;
                 object.position = Vector3{ 0.0f, 0.5f, 0.0f };
                 object.mesh_id = r3d::CUBE;
                 object.albedo_mix = 0.75f;
@@ -79,6 +114,7 @@ namespace qk
                 m_scene.objects.emplace_back(object);
 
                 object = r3d::Object{};
+                object.shading_mode = r3d::ShadingMode::Shaded;
                 object.position = Vector3{ -2.0f, 2.0f, 0.0f };
                 object.mesh_id = r3d::ICOSPHERE;
                 object.albedo_mix = 0.0f;
@@ -86,6 +122,7 @@ namespace qk
                 m_scene.objects.emplace_back(object);
 
                 object = r3d::Object{};
+                object.shading_mode = r3d::ShadingMode::Shaded;
                 object.position = Vector3{ +2.0f, 2.0f, 0.0f };
                 object.mesh_id = r3d::CONE;
                 object.albedo_mix = 0.0f;
@@ -197,57 +234,66 @@ namespace qk
                     ImGuiEx::ColorEdit3("Color", m_scene.background.color);
                     ImGui::EndTabItem();
                 }
-                if (ImGui::BeginTabItem("Directional Light"))
+                if (ImGui::BeginTabItem("Lights"))
                 {
-                    ImGui::Checkbox("Render Gizmos", &m_scene.directional_light.render_gizmos);
-                    ImGuiEx::DragFloat3("Direction", m_scene.directional_light.direction, 0.01f, -1.0f, +1.0f);
-                    ImGuiEx::ColorEdit3("Color", m_scene.directional_light.color);
-
-                    ImGui::EndTabItem();
-                }
-                if (ImGui::BeginTabItem("Point Lights"))
-                {
-                    for (std::size_t i{}; i < m_scene.point_lights.size(); i++)
+                    for (std::size_t i{}; i < m_scene.lights.size(); i++)
                     {
-                        r3d::PointLight& point_light{ m_scene.point_lights[i] };
+                        r3d::Light& light{ m_scene.lights[i] };
 
                         ImGui::PushID(static_cast<int>(i));
                         {
-                            std::string label{ std::format("Point Light {}", i) };
+                            std::string label{ std::format("Light {}", i) };
                             ImGuiTreeNodeFlags tree_node_flags{ ImGuiTreeNodeFlags_DefaultOpen };
                             if (ImGui::CollapsingHeader(label.c_str(), tree_node_flags))
                             {
-                                ImGui::Checkbox("Render Gizmos", &point_light.render_gizmos);
-                                ImGuiEx::DragFloat3("Position", point_light.position, 0.01f);
-                                ImGuiEx::ColorEdit3("Color", point_light.color);
-                                ImGui::DragFloat("Min Radius", &point_light.r_min, 0.01f, 0.01f, 1000.0f);
-                                ImGui::DragFloat("Max Radius", &point_light.r_max, 0.01f, 0.01f, 1000.0f);
-                            }
-                        }
-                        ImGui::PopID();
-                    }
-                    ImGui::EndTabItem();
-                }
-                if (ImGui::BeginTabItem("Spot Lights"))
-                {
-                    for (std::size_t i{}; i < m_scene.spot_lights.size(); i++)
-                    {
-                        r3d::SpotLight& spot_light{ m_scene.spot_lights[i] };
+                                if (ImGui::BeginCombo("Type", GetLightTypeStr(light.type)))
+                                {
+                                    for (int n{}; n < static_cast<int>(r3d::LightType::Count); n++)
+                                    {
+                                        r3d::LightType light_type{ static_cast<r3d::LightType>(n) };
+                                        bool is_selected{ light.type == light_type };
+                                        if (ImGui::Selectable(GetLightTypeStr(light_type), is_selected))
+                                        {
+                                            light.type = light_type;
+                                        }
+                                        if (is_selected)
+                                        {
+                                            ImGui::SetItemDefaultFocus();
+                                        }
+                                    }
+                                    ImGui::EndCombo();
+                                }
 
-                        ImGui::PushID(static_cast<int>(i));
-                        {
-                            std::string label{ std::format("Spot Light {}", i) };
-                            ImGuiTreeNodeFlags tree_node_flags{ ImGuiTreeNodeFlags_DefaultOpen };
-                            if (ImGui::CollapsingHeader(label.c_str(), tree_node_flags))
-                            {
-                                ImGui::Checkbox("Render Gizmos", &spot_light.render_gizmos);
-                                ImGuiEx::DragFloat3("Position", spot_light.position, 0.01f);
-                                ImGuiEx::DragFloat3("Direction", spot_light.direction, 0.01f);
-                                ImGuiEx::ColorEdit3("Color", spot_light.color);
-                                ImGui::DragFloat("Min Radius", &spot_light.r_min, 0.01f, 0.01f, 1000.0f);
-                                ImGui::DragFloat("Max Radius", &spot_light.r_max, 0.01f, 0.01f, 1000.0f);
-                                ImGui::DragFloat("Umbra (deg)", &spot_light.umbra_angle_deg, 0.1f, 0.0f, 89.0f);
-                                ImGui::DragFloat("Penumbra (deg)", &spot_light.penumbra_angle_deg, 0.1f, 0.0f, 89.0f);
+                                switch (light.type)
+                                {
+                                case r3d::LightType::Directional:
+                                {
+                                    ImGuiEx::DragFloat3("Direction", light.direction, 0.01f, -1.0f, +1.0f);
+                                    ImGuiEx::ColorEdit3("Color", light.color);
+                                } break;
+                                case r3d::LightType::Point:
+                                {
+                                    ImGuiEx::DragFloat3("Position", light.position, 0.01f);
+                                    ImGuiEx::ColorEdit3("Color", light.color);
+                                    ImGui::DragFloat("Min Radius", &light.r_min, 0.01f, 0.01f, 1000.0f);
+                                    ImGui::DragFloat("Max Radius", &light.r_max, 0.01f, 0.01f, 1000.0f);
+                                } break;
+                                case r3d::LightType::Spot:
+                                {
+                                    ImGuiEx::DragFloat3("Position", light.position, 0.01f);
+                                    ImGuiEx::DragFloat3("Direction", light.direction, 0.01f);
+                                    ImGuiEx::ColorEdit3("Color", light.color);
+                                    ImGui::DragFloat("Min Radius", &light.r_min, 0.01f, 0.01f, 1000.0f);
+                                    ImGui::DragFloat("Max Radius", &light.r_max, 0.01f, 0.01f, 1000.0f);
+                                    ImGui::DragFloat("Umbra (deg)", &light.umbra_angle_deg, 0.1f, 0.0f, 89.0f);
+                                    ImGui::DragFloat("Penumbra (deg)", &light.penumbra_angle_deg, 0.1f, 0.0f, 89.0f);
+                                } break;
+                                default:
+                                {
+                                    qk_Unreachable();
+                                } break;
+                                }
+                                ImGui::Checkbox("Render Gizmos", &light.render_gizmos);
                             }
                         }
                         ImGui::PopID();
@@ -266,6 +312,24 @@ namespace qk
                             ImGuiTreeNodeFlags tree_node_flags{ ImGuiTreeNodeFlags_DefaultOpen };
                             if (ImGui::CollapsingHeader(label.c_str(), tree_node_flags))
                             {
+                                if (ImGui::BeginCombo("Shading Mode", GetShadingModeStr(object.shading_mode)))
+                                {
+                                    for (int n{}; n < static_cast<int>(r3d::ShadingMode::Count); n++)
+                                    {
+                                        r3d::ShadingMode shading_mode{ static_cast<r3d::ShadingMode>(n) };
+                                        bool is_selected{ object.shading_mode == shading_mode };
+                                        if (ImGui::Selectable(GetShadingModeStr(shading_mode), is_selected))
+                                        {
+                                            object.shading_mode = shading_mode;
+                                        }
+                                        if (is_selected)
+                                        {
+                                            ImGui::SetItemDefaultFocus();
+                                        }
+                                    }
+                                    ImGui::EndCombo();
+                                }
+
                                 ImGuiEx::DragFloat3("Position", object.position, 0.1f);
                                 ImGuiEx::DragFloat3("Rotation", object.rotation, 0.1f);
                                 ImGuiEx::DragFloat3("Scaling", object.scaling, 0.1f);

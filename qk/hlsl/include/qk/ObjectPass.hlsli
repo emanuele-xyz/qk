@@ -26,7 +26,6 @@ SamplerState albedo_sampler : register(s0);
 
 Texture2D albedo_texture : register(t0);
 
-StructuredBuffer<ObjectPassPointLight> sb_point_lights : register(t1);
-StructuredBuffer<ObjectPassSpotLight> sb_spot_lights : register(t2);
+StructuredBuffer<ObjectPassLight> sb_lights : register(t1);
 
 #endif

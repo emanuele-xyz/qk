@@ -36,26 +36,19 @@ namespace qk::r3d
         float far_plane{ 100.0f };
     };
 
-    struct DirectionalLight
+    enum class LightType
     {
-        bool render_gizmos{ false };
-        Vector3 direction{ -1.0f, -1.0f, -1.0f };
-        Vector3 color{ 1.0f, 1.0f, 1.0f };
+        Directional,
+        Point,
+        Spot,
+        Count
     };
 
-    struct PointLight
+    struct Light
     {
+        LightType type{ LightType::Directional };
         bool render_gizmos{ false };
         Vector3 position{};
-        Vector3 color{ 1.0f, 1.0f, 1.0f };
-        float r_min{ 0.1f };
-        float r_max{ 5.0f };
-    };
-
-    struct SpotLight
-    {
-        bool render_gizmos{ false };
-        Vector3 position{ 1.0f, 1.0f, 1.0f };
         Vector3 direction{ 0.0f, -1.0f, 0.0f };
         Vector3 color{ 1.0f, 1.0f, 1.0f };
         float r_min{ 0.1f };
@@ -64,8 +57,16 @@ namespace qk::r3d
         float penumbra_angle_deg{ 30.0f };
     };
 
+    enum class ShadingMode
+    {
+        Flat,
+        Shaded,
+        Count
+    };
+
     struct Object
     {
+        ShadingMode shading_mode{ ShadingMode::Flat };
         Vector3 position{};
         Vector3 rotation{};
         Vector3 scaling{ 1.0f, 1.0f, 1.0f };
@@ -81,9 +82,7 @@ namespace qk::r3d
         SceneSettings settings;
         Background background{};
         Camera camera{};
-        DirectionalLight directional_light{};
-        std::vector<PointLight> point_lights{};
-        std::vector<SpotLight> spot_lights{};
+        std::vector<Light> lights{};
         std::vector<Object> objects{};
     };
 }

@@ -152,9 +152,9 @@
     <None Include="hlsl\include\qk\ObjectPass.hlsli" />
     <CopyFileToFolders Include="hlsl\include\qk\ObjectPassBuffers.hlsli">
       <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)\private\qk\hlsl\</DestinationFolders>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)\include\qk\hlsl\</DestinationFolders>
       <DestinationFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(Filename).h</DestinationFileName>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)\private\qk\hlsl\</DestinationFolders>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)\include\qk\hlsl\</DestinationFolders>
       <DestinationFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(Filename).h</DestinationFileName>
     </CopyFileToFolders>
     <None Include="hlsl\include\qk\ObjectPassMetaPS.hlsli" />
@@ -162,8 +162,8 @@
     <None Include="hlsl\include\qk\WBOITComposite.hlsli" />
     <CopyFileToFolders Include="hlsl\include\qk\WBOITCompositeBuffers.hlsli">
       <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)\private\qk\hlsl\</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)\private\qk\hlsl\</DestinationFolders>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)\include\qk\hlsl\</DestinationFolders>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)\include\qk\hlsl\</DestinationFolders>
       <DestinationFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(Filename).h</DestinationFileName>
       <DestinationFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(Filename).h</DestinationFileName>
     </CopyFileToFolders>
