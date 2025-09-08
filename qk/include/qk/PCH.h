@@ -1,0 +1,24 @@
+#pragma once
+
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <chrono>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <format>
+#include <iomanip>
+#include <iostream>
+#include <iterator>
+#include <limits>
+#include <memory>
+#include <optional>
+#include <print>
+#include <span>
+#include <sstream>
+#include <stacktrace>
+#include <stdexcept>
+#include <string>
+#include <utility>
+#include <vector>

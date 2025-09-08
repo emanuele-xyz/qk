@@ -19,13 +19,13 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -52,7 +52,14 @@
     <IntDir>$(SolutionDir)\.tmp\$(ProjectName)-$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg">
-    <VcpkgEnabled>false</VcpkgEnabled>
+    <VcpkgEnabled>true</VcpkgEnabled>
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <VcpkgInstalledDir>$(SolutionDir)\.vcpkg_install</VcpkgInstalledDir>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <VcpkgInstalledDir>$(SolutionDir)\.vcpkg_install</VcpkgInstalledDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -64,7 +71,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>qk/PCH.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)\public;$(ProjectDir)\private;$(SolutionDir)\SimpleMath\public</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -75,7 +82,7 @@
       <ShaderModel>5.0</ShaderModel>
       <TreatWarningAsError>true</TreatWarningAsError>
       <VariableName>%(Filename)_bytes</VariableName>
-      <HeaderFileOutput>$(ProjectDir)\private\qk\hlsl\%(Filename).h</HeaderFileOutput>
+      <HeaderFileOutput>$(ProjectDir)\include\qk\hlsl\%(Filename).h</HeaderFileOutput>
       <ObjectFileOutput />
     </FxCompile>
   </ItemDefinitionGroup>
@@ -91,7 +98,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>qk/PCH.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)\public;$(ProjectDir)\private;$(SolutionDir)\SimpleMath\public</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -102,30 +109,43 @@
       <ShaderModel>5.0</ShaderModel>
       <TreatWarningAsError>true</TreatWarningAsError>
       <VariableName>%(Filename)_bytes</VariableName>
-      <HeaderFileOutput>$(ProjectDir)\private\qk\hlsl\%(Filename).h</HeaderFileOutput>
+      <HeaderFileOutput>$(ProjectDir)\include\qk\hlsl\%(Filename).h</HeaderFileOutput>
       <ObjectFileOutput />
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="private\qk\Commons.h" />
-    <ClInclude Include="private\qk\D11.h" />
-    <ClInclude Include="private\qk\PCH.h" />
-    <ClInclude Include="public\qk\Crash.h" />
-    <ClInclude Include="public\qk\Mesh.h" />
-    <ClInclude Include="public\qk\Qk.h" />
-    <ClInclude Include="public\qk\Renderer.h" />
-    <ClInclude Include="public\qk\Scene.h" />
-    <ClInclude Include="public\qk\Texture.h" />
-    <ClInclude Include="public\qk\Vectors.h" />
+    <ClInclude Include="include\qk\Editor.h" />
+    <ClInclude Include="include\qk\Camera.h" />
+    <ClInclude Include="include\qk\Commons.h" />
+    <ClInclude Include="include\qk\D11.h" />
+    <ClInclude Include="include\qk\imguiex\ImGuiEx.h" />
+    <ClInclude Include="include\qk\imguiex\ImGuiHandle.h" />
+    <ClInclude Include="include\qk\Keyboard.h" />
+    <ClInclude Include="include\qk\Mouse.h" />
+    <ClInclude Include="include\qk\PCH.h" />
+    <ClInclude Include="include\qk\r3d\Mesh.h" />
+    <ClInclude Include="include\qk\r3d\Renderer.h" />
+    <ClInclude Include="include\qk\r3d\Scene.h" />
+    <ClInclude Include="include\qk\r3d\Texture.h" />
+    <ClInclude Include="include\qk\Math.h" />
+    <ClInclude Include="include\qk\W32.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Crash.cpp" />
+    <ClCompile Include="src\Camera.cpp" />
+    <ClCompile Include="src\Commons.cpp" />
     <ClCompile Include="src\D11.cpp" />
+    <ClCompile Include="src\Editor.cpp" />
+    <ClCompile Include="src\imguiex\ImGuiEx.cpp" />
+    <ClCompile Include="src\imguiex\ImGuiHandle.cpp" />
+    <ClCompile Include="src\Keyboard.cpp" />
+    <ClCompile Include="src\Main.cpp" />
+    <ClCompile Include="src\Mouse.cpp" />
     <ClCompile Include="src\PCH.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="src\Renderer.cpp" />
+    <ClCompile Include="src\r3d\Renderer.cpp" />
+    <ClCompile Include="src\W32.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="hlsl\include\qk\GammaCorrect.hlsli" />

@@ -15,48 +15,87 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="public\qk\Qk.h">
+    <ClInclude Include="include\qk\r3d\Renderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="public\qk\Renderer.h">
+    <ClInclude Include="include\qk\PCH.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="private\qk\PCH.h">
+    <ClInclude Include="include\qk\D11.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="private\qk\D11.h">
+    <ClInclude Include="include\qk\Commons.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="private\qk\Commons.h">
+    <ClInclude Include="include\qk\Math.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="public\qk\Crash.h">
+    <ClInclude Include="include\qk\r3d\Mesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="public\qk\Vectors.h">
+    <ClInclude Include="include\qk\r3d\Scene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="public\qk\Mesh.h">
+    <ClInclude Include="include\qk\r3d\Texture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="public\qk\Scene.h">
+    <ClInclude Include="include\qk\W32.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="public\qk\Texture.h">
+    <ClInclude Include="include\qk\imguiex\ImGuiHandle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\qk\Keyboard.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\qk\Mouse.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\qk\Camera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\qk\Editor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\qk\imguiex\ImGuiEx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Renderer.cpp">
+    <ClCompile Include="src\r3d\Renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\PCH.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Crash.cpp">
+    <ClCompile Include="src\Commons.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\D11.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\W32.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imguiex\ImGuiHandle.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Keyboard.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Mouse.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Camera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Editor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imguiex\ImGuiEx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
