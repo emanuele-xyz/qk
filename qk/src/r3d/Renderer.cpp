@@ -1262,35 +1262,73 @@ namespace qk::r3d
         : m_texture{}
         , m_srv{}
     {
-        DXGI_FORMAT format{};
-        switch (channels)
+        // upload image data to directxtex scratch image object
+        DirectX::ScratchImage image{};
         {
-        case 1: { format = DXGI_FORMAT_R8_UNORM; } break;
-        case 2: { format = DXGI_FORMAT_R8G8_UNORM; } break;
-        case 4: { format = DXGI_FORMAT_R8G8B8A8_UNORM; } break;
-        default: { qk_Unreachable(); } break;
+            // choose most appropriate format for the image
+            DXGI_FORMAT format{};
+            switch (channels)
+            {
+            case 1: { format = DXGI_FORMAT_R8_UNORM; } break;
+            case 2: { format = DXGI_FORMAT_R8G8_UNORM; } break;
+            case 4: { format = DXGI_FORMAT_R8G8B8A8_UNORM; } break;
+            default: { qk_Unreachable(); } break;
+            }
+
+            if (linear) // if image is required to be linear, make sure that the slected format is linear
+            {
+                format = DirectX::MakeLinear(format);
+            }
+            else // if image is required to be not-linear, make sure that the slected format is sRGB
+            {
+                format = DirectX::MakeSRGB(format);
+            }
+
+            // initialize image
+            qk_CheckHR(image.Initialize2D(format, w, h, 1, 1));
+            const DirectX::Image* img{ image.GetImage(0, 0, 0) };
+
+            // copy image row by row, since the row pitch may be different from w * channels
+            for (std::size_t row{}; row < img->height; row++)
+            {
+                std::memcpy(img->pixels + row * img->rowPitch, static_cast<const std::uint8_t*>(data) + row * w * channels, w * channels);
+            }
         }
 
-        if (!linear)
+        // generate image mip chain
+        DirectX::ScratchImage mip_chain{};
+        qk_CheckHR(DirectX::GenerateMipMaps(*image.GetImage(0, 0, 0), DirectX::TEX_FILTER_DEFAULT, 0, mip_chain, false));
+
+        // get texture metadata
+        DirectX::TexMetadata metadata{ mip_chain.GetMetadata() };
+
+        // upload image to the GPU
         {
-            format = DirectX::MakeSRGB(format);
+            D3D11_TEXTURE2D_DESC desc{};
+            desc.Width = static_cast<UINT>(metadata.width);
+            desc.Height = static_cast<UINT>(metadata.height);
+            desc.MipLevels = static_cast<UINT>(metadata.mipLevels);
+            desc.ArraySize = static_cast<UINT>(metadata.arraySize);
+            desc.Format = metadata.format;
+            desc.SampleDesc = { .Count = 1, .Quality = 0 };
+            desc.Usage = D3D11_USAGE_IMMUTABLE;
+            desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+            desc.CPUAccessFlags = 0;
+            desc.MiscFlags = 0;
+
+            auto subres_data{ std::make_unique<D3D11_SUBRESOURCE_DATA[]>(metadata.mipLevels) };
+            for (std::size_t mip_level{}; mip_level < metadata.mipLevels; mip_level++)
+            {
+                auto mip_lvl{ mip_chain.GetImage(mip_level, 0, 0) };
+                subres_data[mip_level].pSysMem = mip_lvl->pixels;
+                subres_data[mip_level].SysMemPitch = static_cast<UINT>(mip_lvl->rowPitch);
+                subres_data[mip_level].SysMemSlicePitch = static_cast<UINT>(mip_lvl->slicePitch);
+            }
+
+            qk_CheckHR(dev->CreateTexture2D(&desc, subres_data.get(), m_texture.ReleaseAndGetAddressOf()));
         }
 
-        D3D11_TEXTURE2D_DESC desc{};
-        desc.Width = static_cast<UINT>(w);
-        desc.Height = static_cast<UINT>(h);
-        desc.MipLevels = 1; // TODO: generate mip chain
-        desc.ArraySize = 1;
-        desc.Format = format;
-        desc.SampleDesc = { .Count = 1, .Quality = 0 };
-        desc.Usage = D3D11_USAGE_IMMUTABLE;
-        desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-        desc.CPUAccessFlags = 0;
-        desc.MiscFlags = 0;
-        D3D11_SUBRESOURCE_DATA initial_data{};
-        initial_data.pSysMem = data;
-        initial_data.SysMemPitch = w * channels;
-        qk_CheckHR(dev->CreateTexture2D(&desc, &initial_data, m_texture.ReleaseAndGetAddressOf()));
+        // create srv
         qk_CheckHR(dev->CreateShaderResourceView(m_texture.Get(), nullptr, m_srv.ReleaseAndGetAddressOf()));
     }
 
