@@ -372,7 +372,7 @@ FodyWeavers.xsd
 imgui.ini
 
 # compiled shader bytecode into a header
-qk/private/qk/hlsl
+qk/include/qk/hlsl
 
 # vcpkg
 .vcpkg_install
