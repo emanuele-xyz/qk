@@ -130,7 +130,7 @@ namespace qk
             editor.Update(frame_stopwatch.ElapsedSec());
 
             // render scene to the back buffer
-            renderer.Render(window_w, window_h, frame_buffer.BackBufferRTV(), editor.Scene());
+            renderer.Render(window_w, window_h, frame_buffer.BackBufferRTVsRGB(), editor.Scene());
 
             // render editor ui
             imgui_handle.BeginFrame();
@@ -144,7 +144,7 @@ namespace qk
                 }
                 ImGui::End();
             }
-            imgui_handle.EndFrame(frame_buffer.BackBufferRTV());
+            imgui_handle.EndFrame(frame_buffer.BackBufferRTVLinear());
 
             // present
             qk_CheckHR(swap_chain->Present(1, 0)); // use vsync

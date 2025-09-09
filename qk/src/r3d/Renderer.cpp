@@ -9,10 +9,11 @@
 #define matrix Matrix
 #define float3 Vector3
 #include <qk/hlsl/ObjectPassBuffers.h>
-#include <qk/hlsl/WBOITCompositeBuffers.h>
 #undef float3
 #undef matrix
 #undef int
+
+#include <DirectXTex.h>
 
 namespace qk::r3d
 {
@@ -1125,7 +1126,7 @@ namespace qk::r3d
     private:
         constexpr static int ALBEDO_DIM{ 64 };
     public:
-        Texture(ID3D11Device* dev, int w, int h, int channels, const void* data);
+        Texture(ID3D11Device* dev, bool linear, int w, int h, int channels, const void* data);
         ~Texture() = default;
         Texture(const Texture&) = delete;
         Texture(Texture&&) noexcept = default;
@@ -1160,7 +1161,7 @@ namespace qk::r3d
             };
         }
 
-        return Texture{ dev, DIM, DIM, CHANNELS, pixels.get() };
+        return Texture{ dev, false, DIM, DIM, CHANNELS, pixels.get() };
     }
     Texture Texture::AlbedoWhite(ID3D11Device* dev)
     {
@@ -1185,7 +1186,7 @@ namespace qk::r3d
             };
         }
 
-        return Texture{ dev, DIM, DIM, CHANNELS, pixels.get() };
+        return Texture{ dev, false, DIM, DIM, CHANNELS, pixels.get() };
     }
     Texture Texture::AlbedoPink(ID3D11Device* dev)
     {
@@ -1210,7 +1211,7 @@ namespace qk::r3d
             };
         }
 
-        return Texture{ dev, DIM, DIM, CHANNELS, pixels.get() };
+        return Texture{ dev, false, DIM, DIM, CHANNELS, pixels.get() };
     }
     Texture Texture::AlbedoChecker(ID3D11Device* dev)
     {
@@ -1255,9 +1256,9 @@ namespace qk::r3d
             }
         }
 
-        return Texture{ dev, DIM, DIM, CHANNELS, pixels.get() };
+        return Texture{ dev, false, DIM, DIM, CHANNELS, pixels.get() };
     }
-    Texture::Texture(ID3D11Device* dev, int w, int h, int channels, const void* data)
+    Texture::Texture(ID3D11Device* dev, bool linear, int w, int h, int channels, const void* data)
         : m_texture{}
         , m_srv{}
     {
@@ -1268,6 +1269,11 @@ namespace qk::r3d
         case 2: { format = DXGI_FORMAT_R8G8_UNORM; } break;
         case 4: { format = DXGI_FORMAT_R8G8B8A8_UNORM; } break;
         default: { qk_Unreachable(); } break;
+        }
+
+        if (!linear)
+        {
+            format = DirectX::MakeSRGB(format);
         }
 
         D3D11_TEXTURE2D_DESC desc{};
@@ -1322,7 +1328,6 @@ namespace qk::r3d
         wrl::ComPtr<ID3D11SamplerState> m_ss_nearest;
         d11::ConstantBuffer m_cb_scene;
         d11::ConstantBuffer m_cb_object;
-        d11::ConstantBuffer m_cb_wboit_composite;
         d11::StructuredBuffer m_sb_lights;
         d11::Buffer2D m_wboit_accum_buffer;
         d11::Buffer2D m_wboit_reveal_buffer;
@@ -1350,7 +1355,6 @@ namespace qk::r3d
         , m_bs_wboit_composit{}
         , m_cb_scene{}
         , m_cb_object{}
-        , m_cb_wboit_composite{}
         , m_sb_lights{ dev, sizeof(ObjectPassLight) }
         , m_wboit_accum_buffer{ dev, DXGI_FORMAT_R16G16B16A16_FLOAT, D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET }
         , m_wboit_reveal_buffer{ dev, DXGI_FORMAT_R16_FLOAT, D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET }
@@ -1530,9 +1534,6 @@ namespace qk::r3d
 
         // object constant buffer
         m_cb_object = d11::ConstantBuffer{ m_dev,sizeof(ObjectPassObjectConstants) };
-
-        // wboit composite pass constant buffer
-        m_cb_wboit_composite = d11::ConstantBuffer{ m_dev, sizeof(WBOITCompositeConstants) };
     }
     void ObjectPass::Render(int w, int h, ID3D11RenderTargetView* rtv, ID3D11DepthStencilView* dsv, const Scene& scene)
     {
@@ -1566,7 +1567,6 @@ namespace qk::r3d
             constants->view = view;
             constants->projection = projection;
             constants->lights_count = static_cast<std::int32_t>(scene.lights.size());
-            constants->gamma = scene.settings.gamma;
         }
 
         // resize lights structured buffer, if necessary
@@ -1593,7 +1593,7 @@ namespace qk::r3d
 
                 constants[i].world_position = light.position;
                 constants[i].direction = light.direction;
-                constants[i].color = light.color;
+                constants[i].color = GammaCorrectToLinear(light.color);
                 constants[i].r_min = light.r_min;
                 constants[i].r_max = light.r_max;
                 constants[i].umbra_rad = dx::XMConvertToRadians(light.umbra_angle_deg);
@@ -1657,7 +1657,7 @@ namespace qk::r3d
                     }
                     constants->model = model;
                     constants->normal = normal;
-                    constants->albedo_color = object.albedo_color;
+                    constants->albedo_color = GammaCorrectToLinear(object.albedo_color);
                     constants->albedo_mix = object.albedo_mix;
                     constants->opacity = object.opacity;
                 }
@@ -1748,7 +1748,7 @@ namespace qk::r3d
                         auto constants{ map.Data<ObjectPassObjectConstants>() };
                         constants->shading_mode = QK_OBJECT_PASS_SHADING_MODE_FLAT;
                         constants->model = model;
-                        constants->albedo_color = light.color;
+                        constants->albedo_color = GammaCorrectToLinear(light.color);
                         constants->albedo_mix = 0.0f;
                         constants->opacity = 1.0f;
                     }
@@ -1768,7 +1768,7 @@ namespace qk::r3d
                         auto constants{ map.Data<ObjectPassObjectConstants>() };
                         constants->shading_mode = QK_OBJECT_PASS_SHADING_MODE_FLAT;
                         constants->model = model;
-                        constants->albedo_color = light.color;
+                        constants->albedo_color = GammaCorrectToLinear(light.color);
                         constants->albedo_mix = 0.0f;
                         constants->opacity = 1.0f;
                     }
@@ -1888,7 +1888,7 @@ namespace qk::r3d
                             auto constants{ map.Data<ObjectPassObjectConstants>() };
                             constants->shading_mode = QK_OBJECT_PASS_SHADING_MODE_FLAT;
                             constants->model = model;
-                            constants->albedo_color = light.color;
+                            constants->albedo_color = GammaCorrectToLinear(light.color);
                             constants->albedo_mix = 0.0f;
                             constants->opacity = 1.0f;
                         }
@@ -1930,13 +1930,13 @@ namespace qk::r3d
 
                     // clear accum buffer
                     {
-                        float clear[4]{ 0.0f, 0.0f, 0.0f, 0.0f };
-                        m_ctx->ClearRenderTargetView(m_wboit_accum_buffer.RTV(), clear);
+                        float clear_color[4]{ 0.0f, 0.0f, 0.0f, 0.0f };
+                        m_ctx->ClearRenderTargetView(m_wboit_accum_buffer.RTV(), clear_color);
                     }
                     // clear reveal buffer
                     {
-                        float clear[4]{ 1.0f, 0.0f, 0.0f, 0.0f };
-                        m_ctx->ClearRenderTargetView(m_wboit_reveal_buffer.RTV(), clear);
+                        float clear_color[4]{ 1.0f, 0.0f, 0.0f, 0.0f };
+                        m_ctx->ClearRenderTargetView(m_wboit_reveal_buffer.RTV(), clear_color);
                     }
 
                     m_ctx->PSSetShader(m_ps_wboit.Get(), nullptr, 0);
@@ -2014,7 +2014,7 @@ namespace qk::r3d
                     }
                     constants->model = model;
                     constants->normal = normal;
-                    constants->albedo_color = object.albedo_color;
+                    constants->albedo_color = GammaCorrectToLinear(object.albedo_color);
                     constants->albedo_mix = object.albedo_mix;
                     constants->opacity = object.opacity;
                 }
@@ -2050,17 +2050,8 @@ namespace qk::r3d
             // if doing weighted blended OIT, we need to composite the result of the transparency pass with the opauqe buffer
             if (scene.settings.transparency == SceneTransparencyTechnique::WeightedBlendedOIT)
             {
-                // upload constants
-                {
-                    d11::SubresourceMap map{ m_cb_wboit_composite.Map(D3D11_MAP_WRITE_DISCARD) };
-                    auto constants{ map.Data<WBOITCompositeConstants>() };
-                    constants->gamma = scene.settings.gamma;
-                }
-
                 // prepare pipeline state and draw
                 {
-                    ID3D11Buffer* cb{ m_cb_wboit_composite.Get() };
-
                     // fetch quad mesh
                     const Mesh& mesh{ m_meshes.at(static_cast<std::size_t>(QUAD)) };
 
@@ -2079,9 +2070,7 @@ namespace qk::r3d
                     m_ctx->IASetIndexBuffer(mesh.Indices(), MESH_INDEX_FORMAT, 0);
                     m_ctx->IASetVertexBuffers(0, 1, &vertices, &vertex_stride, &vertex_offset);
                     m_ctx->VSSetShader(m_vs_wboit_composite.Get(), nullptr, 0);
-                    m_ctx->VSSetConstantBuffers(0, 1, &cb);
                     m_ctx->PSSetShader(m_ps_wboit_composite.Get(), nullptr, 0);
-                    m_ctx->PSSetConstantBuffers(0, 1, &cb);
                     m_ctx->PSSetSamplers(0, 1, &ss);
                     m_ctx->PSSetShaderResources(0, std::size(srvs), srvs);
                     m_ctx->RSSetState(m_rs_fill_cull.Get());
@@ -2185,7 +2174,9 @@ namespace qk::r3d
 
         // clear rtv using the specified background
         {
-            float clear_color[4]{ scene.background.color.x, scene.background.color.y, scene.background.color.z, 1.0f };
+            Vector3 color{ scene.background.color };
+            color = GammaCorrectToLinear(color);
+            float clear_color[4]{ color.x, color.y, color.z, 1.0f };
             m_ctx->ClearRenderTargetView(rtv, clear_color);
         }
 

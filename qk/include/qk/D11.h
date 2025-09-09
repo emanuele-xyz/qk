@@ -34,10 +34,12 @@ namespace qk::d11
         FrameBuffer& operator=(const FrameBuffer&) = delete;
         FrameBuffer& operator=(FrameBuffer&&) noexcept = default;
     public:
-        ID3D11RenderTargetView* BackBufferRTV() const noexcept { return m_back_buffer_rtv.Get(); }
+        ID3D11RenderTargetView* BackBufferRTVLinear() const noexcept { return m_back_buffer_rtv_linear.Get(); }
+        ID3D11RenderTargetView* BackBufferRTVsRGB() const noexcept { return m_back_buffer_rtv_srgb.Get(); }
     private:
         wrl::ComPtr<ID3D11Texture2D> m_back_buffer;
-        wrl::ComPtr<ID3D11RenderTargetView> m_back_buffer_rtv;
+        wrl::ComPtr<ID3D11RenderTargetView> m_back_buffer_rtv_linear;
+        wrl::ComPtr<ID3D11RenderTargetView> m_back_buffer_rtv_srgb;
     };
 
     class SubresourceMap

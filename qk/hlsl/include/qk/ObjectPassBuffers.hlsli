@@ -12,8 +12,7 @@ struct ObjectPassSceneConstants
     matrix view;
     matrix projection;
     int lights_count;
-    float gamma;
-    float _pad[2];
+    float _pad[3];
 };
 
 struct ObjectPassObjectConstants

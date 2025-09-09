@@ -208,7 +208,6 @@ namespace qk
             {
                 if (ImGui::BeginTabItem("Settings"))
                 {
-                    ImGui::DragFloat("Gamma", &m_scene.settings.gamma, 0.1f, 0.0f, 1000.0f); // TODO: hardcoded max gamma
                     if (ImGui::BeginCombo("Transparency", GetSceneTransparencyTechniqueStr(m_scene.settings.transparency)))
                     {
                         for (int n{}; n < static_cast<int>(r3d::SceneTransparencyTechnique::Count); n++)

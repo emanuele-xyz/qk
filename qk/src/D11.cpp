@@ -5,6 +5,8 @@
 #pragma comment(lib, "dxgi")
 #pragma comment(lib, "dxguid")
 
+#include <DirectXTex.h>
+
 namespace qk::d11
 {
     void SetupDXGIInforQueue()
@@ -96,12 +98,24 @@ namespace qk::d11
         // get swap chain back buffer handle
         qk_CheckHR(swap_chain->GetBuffer(0, IID_PPV_ARGS(m_back_buffer.ReleaseAndGetAddressOf())));
 
-        // create swap chain back buffer rtv
-        qk_CheckHR(dev->CreateRenderTargetView(m_back_buffer.Get(), nullptr, m_back_buffer_rtv.ReleaseAndGetAddressOf()));
+        D3D11_TEXTURE2D_DESC buffer_desc{};
+        m_back_buffer->GetDesc(&buffer_desc);
+
+        D3D11_RENDER_TARGET_VIEW_DESC rtv_desc{};
+        rtv_desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+
+        // create linear swap chain back buffer rtv
+        rtv_desc.Format = DirectX::MakeLinear(buffer_desc.Format);
+        qk_CheckHR(dev->CreateRenderTargetView(m_back_buffer.Get(), &rtv_desc, m_back_buffer_rtv_linear.ReleaseAndGetAddressOf()));
+
+        // create srgb swap chain back buffer rtv
+        rtv_desc.Format = DirectX::MakeSRGB(buffer_desc.Format);
+        qk_CheckHR(dev->CreateRenderTargetView(m_back_buffer.Get(), &rtv_desc, m_back_buffer_rtv_srgb.ReleaseAndGetAddressOf()));
     }
     FrameBuffer::FrameBuffer()
         : m_back_buffer{}
-        , m_back_buffer_rtv{}
+        , m_back_buffer_rtv_linear{}
+        , m_back_buffer_rtv_srgb{}
     {
     }
 

@@ -102,7 +102,6 @@
   <ItemGroup>
     <None Include="hlsl\include\qk\ObjectPass.hlsli" />
     <None Include="hlsl\include\qk\ObjectPassMetaPS.hlsli" />
-    <None Include="hlsl\include\qk\GammaCorrect.hlsli" />
     <None Include="hlsl\include\qk\WBOITComposite.hlsli" />
     <None Include="hlsl\include\qk\VSInput.hlsli" />
   </ItemGroup>
@@ -115,6 +114,5 @@
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="hlsl\include\qk\ObjectPassBuffers.hlsli" />
-    <CopyFileToFolders Include="hlsl\include\qk\WBOITCompositeBuffers.hlsli" />
   </ItemGroup>
 </Project>

@@ -17,7 +17,6 @@ namespace qk::r3d
 
     struct SceneSettings
     {
-        float gamma{ 2.2f };
         SceneTransparencyTechnique transparency{ SceneTransparencyTechnique::Sorted };
     };
 
