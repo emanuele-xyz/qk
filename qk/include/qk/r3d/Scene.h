@@ -63,6 +63,36 @@ namespace qk::r3d
         Count
     };
 
+    enum class SamplerFilter
+    {
+        Nearest,
+        Linear,
+        Anisotropic,
+        Count
+    };
+
+    enum class SamplerAddressMode
+    {
+        Wrap,
+        Mirror,
+        Clamp,
+        Border,
+        MirrorOnce,
+        Count
+    };
+
+    struct Albedo
+    {
+        float mix{}; // 0 for color, 1 for texture
+        Vector3 color{ 1.0f, 1.0f, 1.0f };
+        TextureID id{ ALBEDO_BLACK };
+        SamplerFilter sampler_filter{ SamplerFilter::Nearest };
+        SamplerAddressMode sampler_address_mode_u{ SamplerAddressMode::Wrap };
+        SamplerAddressMode sampler_address_mode_v{ SamplerAddressMode::Wrap };
+        int sampler_anisotropy{ 1 }; // from 1 to 16
+        Vector3 sampler_border_color{ 1.0f, 1.0f, 1.0f };
+    };
+
     struct Object
     {
         ShadingMode shading_mode{ ShadingMode::Flat };
@@ -70,9 +100,7 @@ namespace qk::r3d
         Vector3 rotation{};
         Vector3 scaling{ 1.0f, 1.0f, 1.0f };
         MeshID mesh_id{ CUBE };
-        float albedo_mix{}; // 0 for color, 1 for texture
-        Vector3 albedo_color{ 1.0f, 1.0f, 1.0f };
-        TextureID albedo_id{ ALBEDO_BLACK };
+        Albedo albedo{};
         float opacity{ 1.0f }; // 0 for fully transparent, 1 for fully opaque
     };
 

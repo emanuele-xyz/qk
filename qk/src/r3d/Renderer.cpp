@@ -1695,8 +1695,8 @@ namespace qk::r3d
                     }
                     constants->model = model;
                     constants->normal = normal;
-                    constants->albedo_color = GammaCorrectToLinear(object.albedo_color);
-                    constants->albedo_mix = object.albedo_mix;
+                    constants->albedo_color = GammaCorrectToLinear(object.albedo.color);
+                    constants->albedo_mix = object.albedo.mix;
                     constants->opacity = object.opacity;
                 }
 
@@ -1706,7 +1706,7 @@ namespace qk::r3d
                     const Mesh& mesh{ m_meshes.at(static_cast<std::size_t>(object.mesh_id)) };
 
                     // fetch albedo
-                    const Texture& albedo{ m_textures.at(static_cast<std::size_t>(object.albedo_id)) };
+                    const Texture& albedo{ m_textures.at(static_cast<std::size_t>(object.albedo.id)) };
 
                     // prepare mesh related data for pipeline state
                     ID3D11Buffer* vertices{ mesh.Vertices() };
@@ -2052,8 +2052,8 @@ namespace qk::r3d
                     }
                     constants->model = model;
                     constants->normal = normal;
-                    constants->albedo_color = GammaCorrectToLinear(object.albedo_color);
-                    constants->albedo_mix = object.albedo_mix;
+                    constants->albedo_color = GammaCorrectToLinear(object.albedo.color);
+                    constants->albedo_mix = object.albedo.mix;
                     constants->opacity = object.opacity;
                 }
 
@@ -2063,7 +2063,7 @@ namespace qk::r3d
                     const Mesh& mesh{ m_meshes.at(static_cast<std::size_t>(object.mesh_id)) };
 
                     // fetch albedo
-                    const Texture& albedo{ m_textures.at(static_cast<std::size_t>(object.albedo_id)) };
+                    const Texture& albedo{ m_textures.at(static_cast<std::size_t>(object.albedo.id)) };
 
                     // prepare mesh related data for pipeline state
                     ID3D11Buffer* vertices{ mesh.Vertices() };

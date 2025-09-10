@@ -23,6 +23,10 @@ namespace qk
         }
         return str;
     }
+    static r3d::SceneTransparencyTechnique GetNextSceneTransparencyTechnique(r3d::SceneTransparencyTechnique technique)
+    {
+        return static_cast<r3d::SceneTransparencyTechnique>(static_cast<int>(technique) + 1);
+    }
     static const char* GetLightTypeStr(r3d::LightType light_type)
     {
         const char* str{};
@@ -35,6 +39,11 @@ namespace qk
         }
         return str;
     }
+    static r3d::LightType GetNextLightType(r3d::LightType light_type)
+    {
+        return static_cast<r3d::LightType>(static_cast<int>(light_type) + 1);
+
+    }
     static const char* GetShadingModeStr(r3d::ShadingMode shading_mode)
     {
         const char* str{};
@@ -45,6 +54,44 @@ namespace qk
         default: { qk_Unreachable(); } break;
         }
         return str;
+    }
+    static r3d::ShadingMode GetNextShadingMode(r3d::ShadingMode shading_mode)
+    {
+        return static_cast<r3d::ShadingMode>(static_cast<int>(shading_mode) + 1);
+    }
+    static const char* GetSamplerFilterStr(r3d::SamplerFilter sampler_filter)
+    {
+        const char* str{};
+        switch (sampler_filter)
+        {
+        case r3d::SamplerFilter::Nearest: { str = "Nearest"; } break;
+        case r3d::SamplerFilter::Linear: { str = "Linear"; } break;
+        case r3d::SamplerFilter::Anisotropic: { str = "Anisotropic"; } break;
+        default: { qk_Unreachable(); } break;
+        }
+        return str;
+    }
+    static r3d::SamplerFilter GetNextSamplerFilter(r3d::SamplerFilter sampler_filter)
+    {
+        return static_cast<r3d::SamplerFilter>(static_cast<int>(sampler_filter) + 1);
+    }
+    static const char* GetSamplerAddressModeStr(r3d::SamplerAddressMode sampler_mode)
+    {
+        const char* str{};
+        switch (sampler_mode)
+        {
+        case r3d::SamplerAddressMode::Wrap: { str = "Wrap"; } break;
+        case r3d::SamplerAddressMode::Mirror: { str = "Mirror"; } break;
+        case r3d::SamplerAddressMode::Clamp: { str = "Clamp"; } break;
+        case r3d::SamplerAddressMode::Border: { str = "Border"; } break;
+        case r3d::SamplerAddressMode::MirrorOnce: { str = "MirrorOnce"; } break;
+        default: { qk_Unreachable(); } break;
+        }
+        return str;
+    }
+    static r3d::SamplerAddressMode GetNextSamplerAddressMode(r3d::SamplerAddressMode sampler_mode)
+    {
+        return static_cast<r3d::SamplerAddressMode>(static_cast<int>(sampler_mode) + 1);
     }
 
     Editor::Editor(const Keyboard& keyboard, const Mouse& mouse)
@@ -94,39 +141,41 @@ namespace qk
             {
                 r3d::Object object{};
 
+                // TODO: initialize all albedo
+
                 object = r3d::Object{};
                 object.shading_mode = r3d::ShadingMode::Shaded;
                 object.rotation = Vector3{ -90.0f, 0.0f, 0.0f };
                 object.scaling = Vector3{ 10.0f, 10.0f, 1.0f };
                 object.mesh_id = r3d::QUAD;
-                object.albedo_mix = 0.75f;
-                object.albedo_color = Vector3{ 1.0f, 0.0f, 0.0f };
-                object.albedo_id = r3d::ALBEDO_CHECKER;
+                object.albedo.mix = 0.75f;
+                object.albedo.color = Vector3{ 1.0f, 0.0f, 0.0f };
+                object.albedo.id = r3d::ALBEDO_CHECKER;
                 m_scene.objects.emplace_back(object);
 
                 object = r3d::Object{};
                 object.shading_mode = r3d::ShadingMode::Shaded;
                 object.position = Vector3{ 0.0f, 0.5f, 0.0f };
                 object.mesh_id = r3d::CUBE;
-                object.albedo_mix = 0.75f;
-                object.albedo_color = Vector3{ 0.0f, 0.0f, 1.0f };
-                object.albedo_id = r3d::ALBEDO_CHECKER;
+                object.albedo.mix = 0.75f;
+                object.albedo.color = Vector3{ 0.0f, 0.0f, 1.0f };
+                object.albedo.id = r3d::ALBEDO_CHECKER;
                 m_scene.objects.emplace_back(object);
 
                 object = r3d::Object{};
                 object.shading_mode = r3d::ShadingMode::Shaded;
                 object.position = Vector3{ -2.0f, 2.0f, 0.0f };
                 object.mesh_id = r3d::ICOSPHERE;
-                object.albedo_mix = 0.0f;
-                object.albedo_color = Vector3{ 0.0f, 1.0f, 1.0f };
+                object.albedo.mix = 0.0f;
+                object.albedo.color = Vector3{ 0.0f, 1.0f, 1.0f };
                 m_scene.objects.emplace_back(object);
 
                 object = r3d::Object{};
                 object.shading_mode = r3d::ShadingMode::Shaded;
                 object.position = Vector3{ +2.0f, 2.0f, 0.0f };
                 object.mesh_id = r3d::CONE;
-                object.albedo_mix = 0.0f;
-                object.albedo_color = Vector3{ 1.0f, 0.0f, 0.0f };
+                object.albedo.mix = 0.0f;
+                object.albedo.color = Vector3{ 1.0f, 0.0f, 0.0f };
                 m_scene.objects.emplace_back(object);
             }
         }
@@ -208,23 +257,7 @@ namespace qk
             {
                 if (ImGui::BeginTabItem("Settings"))
                 {
-                    if (ImGui::BeginCombo("Transparency", GetSceneTransparencyTechniqueStr(m_scene.settings.transparency)))
-                    {
-                        for (int n{}; n < static_cast<int>(r3d::SceneTransparencyTechnique::Count); n++)
-                        {
-                            r3d::SceneTransparencyTechnique n_technique{ static_cast<r3d::SceneTransparencyTechnique>(n) };
-                            bool is_selected{ m_scene.settings.transparency == n_technique };
-                            if (ImGui::Selectable(GetSceneTransparencyTechniqueStr(n_technique), is_selected))
-                            {
-                                m_scene.settings.transparency = n_technique;
-                            }
-                            if (is_selected)
-                            {
-                                ImGui::SetItemDefaultFocus();
-                            }
-                        }
-                        ImGui::EndCombo();
-                    }
+                    ImGuiEx::Combo("Transparency", GetSceneTransparencyTechniqueStr, GetNextSceneTransparencyTechnique, m_scene.settings.transparency, r3d::SceneTransparencyTechnique::Count);
 
                     ImGui::EndTabItem();
                 }
@@ -245,24 +278,7 @@ namespace qk
                             ImGuiTreeNodeFlags tree_node_flags{ ImGuiTreeNodeFlags_DefaultOpen };
                             if (ImGui::CollapsingHeader(label.c_str(), tree_node_flags))
                             {
-                                if (ImGui::BeginCombo("Type", GetLightTypeStr(light.type)))
-                                {
-                                    for (int n{}; n < static_cast<int>(r3d::LightType::Count); n++)
-                                    {
-                                        r3d::LightType light_type{ static_cast<r3d::LightType>(n) };
-                                        bool is_selected{ light.type == light_type };
-                                        if (ImGui::Selectable(GetLightTypeStr(light_type), is_selected))
-                                        {
-                                            light.type = light_type;
-                                        }
-                                        if (is_selected)
-                                        {
-                                            ImGui::SetItemDefaultFocus();
-                                        }
-                                    }
-                                    ImGui::EndCombo();
-                                }
-
+                                ImGuiEx::Combo("Type", GetLightTypeStr, GetNextLightType, light.type, r3d::LightType::Count);
                                 switch (light.type)
                                 {
                                 case r3d::LightType::Directional:
@@ -311,31 +327,19 @@ namespace qk
                             ImGuiTreeNodeFlags tree_node_flags{ ImGuiTreeNodeFlags_DefaultOpen };
                             if (ImGui::CollapsingHeader(label.c_str(), tree_node_flags))
                             {
-                                if (ImGui::BeginCombo("Shading Mode", GetShadingModeStr(object.shading_mode)))
-                                {
-                                    for (int n{}; n < static_cast<int>(r3d::ShadingMode::Count); n++)
-                                    {
-                                        r3d::ShadingMode shading_mode{ static_cast<r3d::ShadingMode>(n) };
-                                        bool is_selected{ object.shading_mode == shading_mode };
-                                        if (ImGui::Selectable(GetShadingModeStr(shading_mode), is_selected))
-                                        {
-                                            object.shading_mode = shading_mode;
-                                        }
-                                        if (is_selected)
-                                        {
-                                            ImGui::SetItemDefaultFocus();
-                                        }
-                                    }
-                                    ImGui::EndCombo();
-                                }
-
+                                ImGuiEx::Combo("Shading Mode", GetShadingModeStr, GetNextShadingMode, object.shading_mode, r3d::ShadingMode::Count);
                                 ImGuiEx::DragFloat3("Position", object.position, 0.1f);
                                 ImGuiEx::DragFloat3("Rotation", object.rotation, 0.1f);
                                 ImGuiEx::DragFloat3("Scaling", object.scaling, 0.1f);
                                 ImGui::Text("Mesh ID: %d", object.mesh_id);
-                                ImGui::DragFloat("Albedo Mix", &object.albedo_mix, 0.001f, 0.0f, 1.0f);
-                                ImGuiEx::ColorEdit3("Albedo Color", object.albedo_color);
-                                ImGui::Text("Albedo ID: %d", object.albedo_id);
+                                ImGui::DragFloat("Albedo Mix", &object.albedo.mix, 0.001f, 0.0f, 1.0f);
+                                ImGuiEx::ColorEdit3("Albedo Color", object.albedo.color);
+                                ImGui::Text("Albedo ID: %d", object.albedo.id);
+                                ImGuiEx::Combo("Albedo Sampler Filter", GetSamplerFilterStr, GetNextSamplerFilter, object.albedo.sampler_filter, r3d::SamplerFilter::Count);
+                                ImGuiEx::Combo("Albedo Sampler Address Mode U: %s", GetSamplerAddressModeStr, GetNextSamplerAddressMode, object.albedo.sampler_address_mode_u, r3d::SamplerAddressMode::Count);
+                                ImGuiEx::Combo("Albedo Sampler Address Mode V: %s", GetSamplerAddressModeStr, GetNextSamplerAddressMode, object.albedo.sampler_address_mode_v, r3d::SamplerAddressMode::Count);
+                                ImGui::DragInt("Albedo Sampler Anisotropy", &object.albedo.sampler_anisotropy, 1.0f, 1, 16); // TODO: hardcoded min max anisotropy
+                                ImGuiEx::ColorEdit3("Albedo Sampler Border Color", object.albedo.sampler_border_color);
                                 ImGui::DragFloat("Opacity", &object.opacity, 0.01f, 0.0f, 1.0f);
 
                                 // TODO: use combo for mesh
