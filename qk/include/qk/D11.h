@@ -14,6 +14,8 @@ namespace wrl = Microsoft::WRL;
 #include <dxgidebug.h>
 #endif
 
+#include <vector>
+
 #define qk_CheckHR(hr) qk_Check(SUCCEEDED(hr))
 
 namespace qk::d11
@@ -185,5 +187,22 @@ namespace qk::d11
         D3D11_TEXTURE2D_DESC m_texture_desc;
         wrl::ComPtr<ID3D11Texture2D> m_texture;
         wrl::ComPtr<ID3D11DepthStencilView> m_dsv;
+    };
+
+    class SamplerCache
+    {
+    public:
+        SamplerCache(ID3D11Device* dev);
+        ~SamplerCache() = default;
+        SamplerCache(const SamplerCache&) = delete;
+        SamplerCache(SamplerCache&&) noexcept = delete;
+        SamplerCache& operator=(const SamplerCache&) = delete;
+        SamplerCache& operator=(SamplerCache&&) noexcept = delete;
+    public:
+        ID3D11SamplerState* Get(const D3D11_SAMPLER_DESC& request);
+    private:
+        ID3D11Device* m_dev;
+        std::vector<D3D11_SAMPLER_DESC> m_descs;
+        std::vector<wrl::ComPtr<ID3D11SamplerState>> m_states;
     };
 }

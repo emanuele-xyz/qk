@@ -20,6 +20,33 @@ namespace qk::r3d
     constexpr DXGI_FORMAT MESH_INDEX_FORMAT{ DXGI_FORMAT_R32_UINT };
     static_assert(sizeof(MeshIndex) == 4);
 
+    static D3D11_FILTER GetD3D11FilterFromSamplerFilter(SamplerFilter filter)
+    {
+        D3D11_FILTER out{};
+        switch (filter)
+        {
+        case SamplerFilter::Nearest: { out = D3D11_FILTER_MIN_MAG_MIP_POINT; } break;
+        case SamplerFilter::Linear: { out = D3D11_FILTER_MIN_MAG_MIP_LINEAR; } break;
+        case SamplerFilter::Anisotropic: { out = D3D11_FILTER_ANISOTROPIC; } break;
+        default: { qk_Unreachable(); } break;
+        }
+        return out;
+    }
+    static D3D11_TEXTURE_ADDRESS_MODE GetD3D11TextureAddressModeFromSamplerAddressMode(SamplerAddressMode mode)
+    {
+        D3D11_TEXTURE_ADDRESS_MODE out{};
+        switch (mode)
+        {
+        case SamplerAddressMode::Wrap: { out = D3D11_TEXTURE_ADDRESS_WRAP; } break;
+        case SamplerAddressMode::Mirror: { out = D3D11_TEXTURE_ADDRESS_MIRROR; } break;
+        case SamplerAddressMode::Clamp: { out = D3D11_TEXTURE_ADDRESS_CLAMP; } break;
+        case SamplerAddressMode::Border: { out = D3D11_TEXTURE_ADDRESS_BORDER; } break;
+        case SamplerAddressMode::MirrorOnce: { out = D3D11_TEXTURE_ADDRESS_MIRROR_ONCE; } break;
+        default: { qk_Unreachable(); } break;
+        }
+        return out;
+    }
+
     class Mesh
     {
     public:
@@ -1335,7 +1362,7 @@ namespace qk::r3d
     class ObjectPass
     {
     public:
-        ObjectPass(ID3D11Device* dev, ID3D11DeviceContext* ctx, const std::vector<Mesh>& meshes, const std::vector<Texture>& textures);
+        ObjectPass(ID3D11Device* dev, ID3D11DeviceContext* ctx, const std::vector<Mesh>& meshes, const std::vector<Texture>& textures, d11::SamplerCache& samplers);
         ~ObjectPass() = default;
         ObjectPass(const ObjectPass&) = delete;
         ObjectPass(ObjectPass&&) noexcept = delete;
@@ -1348,6 +1375,7 @@ namespace qk::r3d
         ID3D11DeviceContext* m_ctx;
         const std::vector<Mesh>& m_meshes;
         const std::vector<Texture>& m_textures;
+        d11::SamplerCache& m_samplers;
         D3D11_VIEWPORT m_viewport;
         wrl::ComPtr<ID3D11VertexShader> m_vs;
         wrl::ComPtr<ID3D11VertexShader> m_vs_wboit_composite;
@@ -1362,8 +1390,6 @@ namespace qk::r3d
         wrl::ComPtr<ID3D11BlendState> m_bs_over;
         wrl::ComPtr<ID3D11BlendState> m_bs_wboit_accum_reveal;
         wrl::ComPtr<ID3D11BlendState> m_bs_wboit_composit;
-        wrl::ComPtr<ID3D11SamplerState> m_texture_ss; // TODO: rename to m_ss_linear
-        wrl::ComPtr<ID3D11SamplerState> m_ss_nearest;
         d11::ConstantBuffer m_cb_scene;
         d11::ConstantBuffer m_cb_object;
         d11::StructuredBuffer m_sb_lights;
@@ -1371,11 +1397,12 @@ namespace qk::r3d
         d11::Buffer2D m_wboit_reveal_buffer;
         std::vector<Object> m_transparent_objects;
     };
-    ObjectPass::ObjectPass(ID3D11Device* dev, ID3D11DeviceContext* ctx, const std::vector<Mesh>& meshes, const std::vector<Texture>& textures)
+    ObjectPass::ObjectPass(ID3D11Device* dev, ID3D11DeviceContext* ctx, const std::vector<Mesh>& meshes, const std::vector<Texture>& textures, d11::SamplerCache& samplers)
         : m_dev{ dev }
         , m_ctx{ ctx }
         , m_meshes{ meshes }
         , m_textures{ textures }
+        , m_samplers{ samplers }
         , m_viewport{ .TopLeftX = 0.0f, .TopLeftY = 0.0f, .MinDepth = 0.0f, .MaxDepth = 1.0f }
         , m_vs{}
         , m_vs_wboit_composite{}
@@ -1387,7 +1414,6 @@ namespace qk::r3d
         , m_rs_fill_nocull{}
         , m_rs_wireframe{}
         , m_dss_nowrite{}
-        , m_texture_ss{}
         , m_bs_over{}
         , m_bs_wboit_accum_reveal{}
         , m_bs_wboit_composit{}
@@ -1531,40 +1557,6 @@ namespace qk::r3d
             desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO; // turn off writes
             desc.DepthFunc = D3D11_COMPARISON_LESS;
             qk_CheckHR(m_dev->CreateDepthStencilState(&desc, m_dss_nowrite.ReleaseAndGetAddressOf()));
-        }
-
-        // sampler state
-        {
-            D3D11_SAMPLER_DESC desc{};
-            desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-            desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-            desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-            desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-            //desc.MaxAnisotropy = ;
-            desc.BorderColor[0] = 0.0f;
-            desc.BorderColor[1] = 0.0f;
-            desc.BorderColor[2] = 0.0f;
-            desc.BorderColor[3] = 0.0f;
-            desc.MinLOD = 0;
-            desc.MaxLOD = D3D11_FLOAT32_MAX;
-            qk_CheckHR(m_dev->CreateSamplerState(&desc, m_texture_ss.ReleaseAndGetAddressOf()));
-        }
-
-        // sampler state used for wboit composite pass
-        {
-            D3D11_SAMPLER_DESC desc{};
-            desc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-            desc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-            desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-            desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-            //desc.MaxAnisotropy = ;
-            desc.BorderColor[0] = 0.0f;
-            desc.BorderColor[1] = 0.0f;
-            desc.BorderColor[2] = 0.0f;
-            desc.BorderColor[3] = 0.0f;
-            desc.MinLOD = 0;
-            desc.MaxLOD = D3D11_FLOAT32_MAX;
-            qk_CheckHR(m_dev->CreateSamplerState(&desc, m_ss_nearest.ReleaseAndGetAddressOf()));
         }
 
         // scene constant buffer
@@ -1713,8 +1705,35 @@ namespace qk::r3d
                     UINT vertex_stride{ sizeof(MeshVertex) };
                     UINT vertex_offset{};
 
-                    // prepare texture related data for pipeline state
-                    ID3D11SamplerState* sss[]{ m_texture_ss.Get() };
+                    // prepare samplers
+                    ID3D11SamplerState* sss[1]{}; // TODO: hardcoded number of samples
+                    {
+                        // sampler used for sampling the albedo texture
+                        D3D11_SAMPLER_DESC desc{};
+                        desc.Filter = GetD3D11FilterFromSamplerFilter(object.albedo.sampler_filter);
+                        desc.AddressU = GetD3D11TextureAddressModeFromSamplerAddressMode(object.albedo.sampler_address_mode_u);
+                        desc.AddressV = GetD3D11TextureAddressModeFromSamplerAddressMode(object.albedo.sampler_address_mode_v);
+                        desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP; // NOTE: needed to not crash
+                        desc.MipLODBias = 0.0f;
+                        if (object.albedo.sampler_filter == SamplerFilter::Anisotropic)
+                        {
+                            desc.MaxAnisotropy = object.albedo.sampler_anisotropy;
+                        }
+                        //desc.ComparisonFunc = ;
+                        if (object.albedo.sampler_address_mode_u == SamplerAddressMode::Border || object.albedo.sampler_address_mode_v == SamplerAddressMode::Border)
+                        {
+                            desc.BorderColor[0] = object.albedo.sampler_border_color.x;
+                            desc.BorderColor[1] = object.albedo.sampler_border_color.y;
+                            desc.BorderColor[2] = object.albedo.sampler_border_color.z;
+                            desc.BorderColor[3] = 1.0f;
+                        }
+                        desc.MinLOD = 0.0f;
+                        desc.MaxLOD = D3D11_FLOAT32_MAX;
+
+                        sss[0] = m_samplers.Get(desc);
+                    }
+
+                    // prepare shader resource views
                     ID3D11ShaderResourceView* srvs[]{ albedo.SRV(), m_sb_lights.SRV() };
 
                     // set pipeline state
@@ -1734,7 +1753,17 @@ namespace qk::r3d
             // prepare pipeline for drawing
             {
                 ID3D11Buffer* cbufs[]{ m_cb_scene.Get(), m_cb_object.Get() };
-                ID3D11SamplerState* sss[]{ m_texture_ss.Get() }; // TODO: this is useful for shutting up warnings
+                ID3D11SamplerState* sss[1]{}; // TODO: this is useful for shutting up warnings // TODO: also hardcoded length
+                {
+                    D3D11_SAMPLER_DESC desc{};
+                    desc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+                    desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+                    desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+                    desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+                    desc.MinLOD = 0.0f;
+                    desc.MaxLOD = D3D11_FLOAT32_MAX;
+                    sss[0] = m_samplers.Get(desc);
+                }
                 ID3D11ShaderResourceView* srvs[]{ m_textures.at(static_cast<size_t>(ALBEDO_BLACK)).SRV(), m_sb_lights.SRV(), }; // TODO: this is useful for shutting up warnings
 
                 // set pipeline state
@@ -2070,8 +2099,35 @@ namespace qk::r3d
                     UINT vertex_stride{ sizeof(MeshVertex) };
                     UINT vertex_offset{};
 
-                    // prepare texture related data for pipeline state
-                    ID3D11SamplerState* sss[]{ m_texture_ss.Get() };
+                    // prepare samplers
+                    ID3D11SamplerState* sss[1]{}; // TODO: hardcoded number of samples
+                    {
+                        // sampler used for sampling the albedo texture
+                        D3D11_SAMPLER_DESC desc{};
+                        desc.Filter = GetD3D11FilterFromSamplerFilter(object.albedo.sampler_filter);
+                        desc.AddressU = GetD3D11TextureAddressModeFromSamplerAddressMode(object.albedo.sampler_address_mode_u);
+                        desc.AddressV = GetD3D11TextureAddressModeFromSamplerAddressMode(object.albedo.sampler_address_mode_v);
+                        desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP; // NOTE: needed to not crash
+                        desc.MipLODBias = 0.0f;
+                        if (object.albedo.sampler_filter == SamplerFilter::Anisotropic)
+                        {
+                            desc.MaxAnisotropy = object.albedo.sampler_anisotropy;
+                        }
+                        //desc.ComparisonFunc = ;
+                        if (object.albedo.sampler_address_mode_u == SamplerAddressMode::Border || object.albedo.sampler_address_mode_v == SamplerAddressMode::Border)
+                        {
+                            desc.BorderColor[0] = object.albedo.sampler_border_color.x;
+                            desc.BorderColor[1] = object.albedo.sampler_border_color.y;
+                            desc.BorderColor[2] = object.albedo.sampler_border_color.z;
+                            desc.BorderColor[3] = 1.0f;
+                        }
+                        desc.MinLOD = 0.0f;
+                        desc.MaxLOD = D3D11_FLOAT32_MAX;
+
+                        sss[0] = m_samplers.Get(desc);
+                    }
+
+                    // prepare shader resource views
                     ID3D11ShaderResourceView* srvs[]{ albedo.SRV(), m_sb_lights.SRV() };
 
                     // set pipeline state
@@ -2098,8 +2154,20 @@ namespace qk::r3d
                     UINT vertex_stride{ sizeof(MeshVertex) };
                     UINT vertex_offset{};
 
-                    // prepare texture related data for pipeline state
-                    ID3D11SamplerState* ss{ m_ss_nearest.Get() };
+                    // prepare samplers
+                    ID3D11SamplerState* ss{};
+                    {
+                        D3D11_SAMPLER_DESC desc{};
+                        desc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+                        desc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+                        desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+                        desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP; // NOTE: needed to not crash
+                        desc.MinLOD = 0;
+                        desc.MaxLOD = D3D11_FLOAT32_MAX;
+                        ss = m_samplers.Get(desc);
+                    }
+
+                    // prepare shader resource views
                     ID3D11ShaderResourceView* srvs[]{ m_wboit_accum_buffer.SRV(), m_wboit_reveal_buffer.SRV() };
 
                     m_ctx->ClearState();
@@ -2140,6 +2208,7 @@ namespace qk::r3d
         std::vector<Mesh> m_meshes;
         std::vector<Texture> m_textures;
         d11::DepthStencilBuffer m_depth_stencil_buffer;
+        d11::SamplerCache m_samplers;
         ObjectPass m_object_pass;
     };
 
@@ -2149,7 +2218,8 @@ namespace qk::r3d
         , m_meshes{}
         , m_textures{}
         , m_depth_stencil_buffer{ m_dev, DXGI_FORMAT_D32_FLOAT } // TODO: hardcoded format
-        , m_object_pass{ m_dev, m_ctx, m_meshes, m_textures }
+        , m_samplers{ dev }
+        , m_object_pass{ m_dev, m_ctx, m_meshes, m_textures, m_samplers }
     {
         // upload default meshes
         // TODO: make it less boilerplaty

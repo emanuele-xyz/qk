@@ -322,4 +322,50 @@ namespace qk::d11
             }
         }
     }
+
+    SamplerCache::SamplerCache(ID3D11Device* dev)
+        : m_dev{ dev }
+        , m_descs{}
+        , m_states{}
+    {
+    }
+    ID3D11SamplerState* SamplerCache::Get(const D3D11_SAMPLER_DESC& request)
+    {
+        // function used to check for equality between the given sampler description and the requested one
+        auto cmp_fn
+        {
+            [request](const D3D11_SAMPLER_DESC& desc)
+            {
+                return desc.Filter == request.Filter &&
+                desc.AddressU == request.AddressU &&
+                desc.AddressV == request.AddressV &&
+                desc.AddressW == request.AddressW &&
+                desc.MipLODBias == request.MipLODBias &&
+                desc.MaxAnisotropy == request.MaxAnisotropy &&
+                desc.ComparisonFunc == request.ComparisonFunc &&
+                desc.BorderColor[0] == request.BorderColor[0] &&
+                desc.BorderColor[1] == request.BorderColor[1] &&
+                desc.BorderColor[2] == request.BorderColor[2] &&
+                desc.BorderColor[3] == request.BorderColor[3] &&
+                desc.MinLOD == request.MinLOD &&
+                desc.MaxLOD == request.MaxLOD;
+            }
+        };
+
+        // do we already have a sampler with the same description?
+        auto it{ std::find_if(m_descs.begin(), m_descs.end(), cmp_fn) };
+        if (it != m_descs.end()) // yes
+        {
+            // return already created sampler
+            return m_states[std::distance(m_descs.begin(), it)].Get();
+        }
+        else // no
+        {
+            // add requested desc to the list, create new sampler using the requested desc, and return it
+            m_descs.emplace_back(request);
+            wrl::ComPtr<ID3D11SamplerState>& ss{ m_states.emplace_back() };
+            m_dev->CreateSamplerState(&request, ss.ReleaseAndGetAddressOf());
+            return ss.Get();
+        }
+    }
 }

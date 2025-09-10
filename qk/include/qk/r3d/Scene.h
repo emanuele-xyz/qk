@@ -81,11 +81,13 @@ namespace qk::r3d
         Count
     };
 
+    // TODO: make a sampler struct
+
     struct Albedo
     {
         float mix{}; // 0 for color, 1 for texture
         Vector3 color{ 1.0f, 1.0f, 1.0f };
-        TextureID id{ ALBEDO_BLACK };
+        TextureID id{ ALBEDO_BLACK }; // TODO: rename to texture
         SamplerFilter sampler_filter{ SamplerFilter::Nearest };
         SamplerAddressMode sampler_address_mode_u{ SamplerAddressMode::Wrap };
         SamplerAddressMode sampler_address_mode_v{ SamplerAddressMode::Wrap };

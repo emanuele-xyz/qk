@@ -334,30 +334,13 @@ namespace qk
                                 ImGui::Text("Mesh ID: %d", object.mesh_id);
                                 ImGui::DragFloat("Albedo Mix", &object.albedo.mix, 0.001f, 0.0f, 1.0f);
                                 ImGuiEx::ColorEdit3("Albedo Color", object.albedo.color);
-                                ImGui::Text("Albedo ID: %d", object.albedo.id);
+                                ImGui::Text("Albedo ID: %d", object.albedo.id); // TODO: use combo for mesh
                                 ImGuiEx::Combo("Albedo Sampler Filter", GetSamplerFilterStr, GetNextSamplerFilter, object.albedo.sampler_filter, r3d::SamplerFilter::Count);
                                 ImGuiEx::Combo("Albedo Sampler Address Mode U: %s", GetSamplerAddressModeStr, GetNextSamplerAddressMode, object.albedo.sampler_address_mode_u, r3d::SamplerAddressMode::Count);
                                 ImGuiEx::Combo("Albedo Sampler Address Mode V: %s", GetSamplerAddressModeStr, GetNextSamplerAddressMode, object.albedo.sampler_address_mode_v, r3d::SamplerAddressMode::Count);
                                 ImGui::DragInt("Albedo Sampler Anisotropy", &object.albedo.sampler_anisotropy, 1.0f, 1, 16); // TODO: hardcoded min max anisotropy
                                 ImGuiEx::ColorEdit3("Albedo Sampler Border Color", object.albedo.sampler_border_color);
                                 ImGui::DragFloat("Opacity", &object.opacity, 0.01f, 0.0f, 1.0f);
-
-                                // TODO: use combo for mesh
-                                //const char* items[] = { "AAAA", "BBBB", "CCCC", "DDDD", "EEEE", "FFFF", "GGGG", "HHHH", "IIII", "JJJJ", "KKKK", "LLLLLLL", "MMMM", "OOOOOOO", "PPPP", "QQQQQQQQQQ", "RRR", "SSSS" };
-                                //static const char* current_item = NULL;
-                                //
-                                //if (ImGui::BeginCombo("##combo", current_item)) // The second parameter is the label previewed before opening the combo.
-                                //{
-                                //    for (int n = 0; n < IM_ARRAYSIZE(items); n++)
-                                //    {
-                                //        bool is_selected = (current_item == items[n]); // You can store your selection however you want, outside or inside your objects
-                                //        if (ImGui::Selectable(items[n], is_selected)
-                                //            current_item = items[n];
-                                //            if (is_selected)
-                                //                ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
-                                //    }
-                                //    ImGui::EndCombo();
-                                //}
                             }
                         }
                         ImGui::PopID();
