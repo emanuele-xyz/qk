@@ -1171,6 +1171,7 @@ namespace qk::r3d
         constexpr static int ALBEDO_DIM{ 64 };
     public:
         Texture(ID3D11Device* dev, bool linear, int w, int h, int channels, const void* data);
+        Texture(ID3D11Device* dev, bool linear, std::filesystem::path path);
         ~Texture() = default;
         Texture(const Texture&) = delete;
         Texture(Texture&&) noexcept = default;
@@ -1362,6 +1363,60 @@ namespace qk::r3d
 
             auto subres_data{ std::make_unique<D3D11_SUBRESOURCE_DATA[]>(metadata.mipLevels) };
             for (std::size_t mip_level{}; mip_level < metadata.mipLevels; mip_level++)
+            {
+                auto mip_lvl{ mip_chain.GetImage(mip_level, 0, 0) };
+                subres_data[mip_level].pSysMem = mip_lvl->pixels;
+                subres_data[mip_level].SysMemPitch = static_cast<UINT>(mip_lvl->rowPitch);
+                subres_data[mip_level].SysMemSlicePitch = static_cast<UINT>(mip_lvl->slicePitch);
+            }
+
+            qk_CheckHR(dev->CreateTexture2D(&desc, subres_data.get(), m_texture.ReleaseAndGetAddressOf()));
+        }
+
+        // create srv
+        qk_CheckHR(dev->CreateShaderResourceView(m_texture.Get(), nullptr, m_srv.ReleaseAndGetAddressOf()));
+    }
+    Texture::Texture(ID3D11Device* dev, bool linear, std::filesystem::path path)
+        : m_texture{}
+        , m_srv{}
+    {
+        // load texture from file
+        DirectX::ScratchImage img{};
+        qk_CheckHR(DirectX::LoadFromWICFile(path.wstring().c_str(), DirectX::WIC_FLAGS_NONE, nullptr, img));
+
+        // generate texture mip chain
+        DirectX::ScratchImage mip_chain{};
+        qk_CheckHR(DirectX::GenerateMipMaps(*img.GetImage(0, 0, 0), DirectX::TEX_FILTER_DEFAULT, 0, mip_chain, false));
+
+        // get texture metadata
+        DirectX::TexMetadata metadata{ mip_chain.GetMetadata() };
+
+        // make format linear or sRGB, as required
+        if (linear)
+        {
+            metadata.format = DirectX::MakeLinear(metadata.format);
+        }
+        else
+        {
+            metadata.format = DirectX::MakeSRGB(metadata.format);
+        }
+
+        // upload image to GPU
+        {
+            D3D11_TEXTURE2D_DESC desc{};
+            desc.Width = static_cast<UINT>(metadata.width);
+            desc.Height = static_cast<UINT>(metadata.height);
+            desc.MipLevels = static_cast<UINT>(metadata.mipLevels);
+            desc.ArraySize = static_cast<UINT>(metadata.arraySize);
+            desc.Format = metadata.format;
+            desc.SampleDesc = { .Count = 1, .Quality = 0 };
+            desc.Usage = D3D11_USAGE_IMMUTABLE;
+            desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+            desc.CPUAccessFlags = 0;
+            desc.MiscFlags = 0;
+
+            auto subres_data{ std::make_unique<D3D11_SUBRESOURCE_DATA[]>(metadata.mipLevels) };
+            for (size_t mip_level{}; mip_level < metadata.mipLevels; mip_level++)
             {
                 auto mip_lvl{ mip_chain.GetImage(mip_level, 0, 0) };
                 subres_data[mip_level].pSysMem = mip_lvl->pixels;
