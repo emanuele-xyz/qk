@@ -83,7 +83,6 @@ namespace qk
         case r3d::SamplerAddressMode::Wrap: { str = "Wrap"; } break;
         case r3d::SamplerAddressMode::Mirror: { str = "Mirror"; } break;
         case r3d::SamplerAddressMode::Clamp: { str = "Clamp"; } break;
-        case r3d::SamplerAddressMode::Border: { str = "Border"; } break;
         case r3d::SamplerAddressMode::MirrorOnce: { str = "MirrorOnce"; } break;
         default: { qk_Unreachable(); } break;
         }
@@ -335,11 +334,10 @@ namespace qk
                                 ImGui::DragFloat("Albedo Mix", &object.albedo.mix, 0.001f, 0.0f, 1.0f);
                                 ImGuiEx::ColorEdit3("Albedo Color", object.albedo.color);
                                 ImGui::Text("Albedo ID: %d", object.albedo.id); // TODO: use combo for mesh
-                                ImGuiEx::Combo("Albedo Sampler Filter", GetSamplerFilterStr, GetNextSamplerFilter, object.albedo.sampler_filter, r3d::SamplerFilter::Count);
-                                ImGuiEx::Combo("Albedo Sampler Address Mode U: %s", GetSamplerAddressModeStr, GetNextSamplerAddressMode, object.albedo.sampler_address_mode_u, r3d::SamplerAddressMode::Count);
-                                ImGuiEx::Combo("Albedo Sampler Address Mode V: %s", GetSamplerAddressModeStr, GetNextSamplerAddressMode, object.albedo.sampler_address_mode_v, r3d::SamplerAddressMode::Count);
-                                ImGui::DragInt("Albedo Sampler Anisotropy", &object.albedo.sampler_anisotropy, 1.0f, 1, 16); // TODO: hardcoded min max anisotropy
-                                ImGuiEx::ColorEdit3("Albedo Sampler Border Color", object.albedo.sampler_border_color);
+                                ImGuiEx::Combo("Albedo Sampler Filter", GetSamplerFilterStr, GetNextSamplerFilter, object.albedo.sampler.filter, r3d::SamplerFilter::Count);
+                                ImGuiEx::Combo("Albedo Sampler Address Mode U: %s", GetSamplerAddressModeStr, GetNextSamplerAddressMode, object.albedo.sampler.address_mode_u, r3d::SamplerAddressMode::Count);
+                                ImGuiEx::Combo("Albedo Sampler Address Mode V: %s", GetSamplerAddressModeStr, GetNextSamplerAddressMode, object.albedo.sampler.address_mode_v, r3d::SamplerAddressMode::Count);
+                                ImGui::DragInt("Albedo Sampler Anisotropy", &object.albedo.sampler.anisotropy, 1.0f, 1, 16); // TODO: hardcoded min max anisotropy
                                 ImGui::DragFloat("Opacity", &object.opacity, 0.01f, 0.0f, 1.0f);
                             }
                         }

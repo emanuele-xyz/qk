@@ -76,23 +76,24 @@ namespace qk::r3d
         Wrap,
         Mirror,
         Clamp,
-        Border,
         MirrorOnce,
         Count
     };
 
-    // TODO: make a sampler struct
+    struct Sampler
+    {
+        SamplerFilter filter{ SamplerFilter::Nearest };
+        SamplerAddressMode address_mode_u{ SamplerAddressMode::Wrap };
+        SamplerAddressMode address_mode_v{ SamplerAddressMode::Wrap };
+        int anisotropy{ 1 }; // from 1 to 16
+    };
 
     struct Albedo
     {
         float mix{}; // 0 for color, 1 for texture
         Vector3 color{ 1.0f, 1.0f, 1.0f };
         TextureID id{ ALBEDO_BLACK }; // TODO: rename to texture
-        SamplerFilter sampler_filter{ SamplerFilter::Nearest };
-        SamplerAddressMode sampler_address_mode_u{ SamplerAddressMode::Wrap };
-        SamplerAddressMode sampler_address_mode_v{ SamplerAddressMode::Wrap };
-        int sampler_anisotropy{ 1 }; // from 1 to 16
-        Vector3 sampler_border_color{ 1.0f, 1.0f, 1.0f };
+        Sampler sampler{};
     };
 
     struct Object

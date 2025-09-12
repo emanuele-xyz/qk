@@ -40,11 +40,28 @@ namespace qk::r3d
         case SamplerAddressMode::Wrap: { out = D3D11_TEXTURE_ADDRESS_WRAP; } break;
         case SamplerAddressMode::Mirror: { out = D3D11_TEXTURE_ADDRESS_MIRROR; } break;
         case SamplerAddressMode::Clamp: { out = D3D11_TEXTURE_ADDRESS_CLAMP; } break;
-        case SamplerAddressMode::Border: { out = D3D11_TEXTURE_ADDRESS_BORDER; } break;
         case SamplerAddressMode::MirrorOnce: { out = D3D11_TEXTURE_ADDRESS_MIRROR_ONCE; } break;
         default: { qk_Unreachable(); } break;
         }
         return out;
+    }
+    static D3D11_SAMPLER_DESC GetD3D11SamplerDescFromSampler(const Sampler& sampler)
+    {
+        D3D11_SAMPLER_DESC desc{};
+        desc.Filter = GetD3D11FilterFromSamplerFilter(sampler.filter);
+        desc.AddressU = GetD3D11TextureAddressModeFromSamplerAddressMode(sampler.address_mode_u);
+        desc.AddressV = GetD3D11TextureAddressModeFromSamplerAddressMode(sampler.address_mode_v);
+        desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP; // NOTE: needed to not crash
+        desc.MipLODBias = 0.0f;
+        if (sampler.filter == SamplerFilter::Anisotropic)
+        {
+            desc.MaxAnisotropy = sampler.anisotropy;
+        }
+        //desc.ComparisonFunc = ;
+        //desc.BorderColor = ;
+        desc.MinLOD = 0.0f;
+        desc.MaxLOD = D3D11_FLOAT32_MAX;
+        return desc;
     }
 
     class Mesh
@@ -1708,29 +1725,7 @@ namespace qk::r3d
                     // prepare samplers
                     ID3D11SamplerState* sss[1]{}; // TODO: hardcoded number of samples
                     {
-                        // sampler used for sampling the albedo texture
-                        D3D11_SAMPLER_DESC desc{};
-                        desc.Filter = GetD3D11FilterFromSamplerFilter(object.albedo.sampler_filter);
-                        desc.AddressU = GetD3D11TextureAddressModeFromSamplerAddressMode(object.albedo.sampler_address_mode_u);
-                        desc.AddressV = GetD3D11TextureAddressModeFromSamplerAddressMode(object.albedo.sampler_address_mode_v);
-                        desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP; // NOTE: needed to not crash
-                        desc.MipLODBias = 0.0f;
-                        if (object.albedo.sampler_filter == SamplerFilter::Anisotropic)
-                        {
-                            desc.MaxAnisotropy = object.albedo.sampler_anisotropy;
-                        }
-                        //desc.ComparisonFunc = ;
-                        if (object.albedo.sampler_address_mode_u == SamplerAddressMode::Border || object.albedo.sampler_address_mode_v == SamplerAddressMode::Border)
-                        {
-                            desc.BorderColor[0] = object.albedo.sampler_border_color.x;
-                            desc.BorderColor[1] = object.albedo.sampler_border_color.y;
-                            desc.BorderColor[2] = object.albedo.sampler_border_color.z;
-                            desc.BorderColor[3] = 1.0f;
-                        }
-                        desc.MinLOD = 0.0f;
-                        desc.MaxLOD = D3D11_FLOAT32_MAX;
-
-                        sss[0] = m_samplers.Get(desc);
+                        sss[0] = m_samplers.Get(GetD3D11SamplerDescFromSampler(object.albedo.sampler));
                     }
 
                     // prepare shader resource views
@@ -2102,29 +2097,7 @@ namespace qk::r3d
                     // prepare samplers
                     ID3D11SamplerState* sss[1]{}; // TODO: hardcoded number of samples
                     {
-                        // sampler used for sampling the albedo texture
-                        D3D11_SAMPLER_DESC desc{};
-                        desc.Filter = GetD3D11FilterFromSamplerFilter(object.albedo.sampler_filter);
-                        desc.AddressU = GetD3D11TextureAddressModeFromSamplerAddressMode(object.albedo.sampler_address_mode_u);
-                        desc.AddressV = GetD3D11TextureAddressModeFromSamplerAddressMode(object.albedo.sampler_address_mode_v);
-                        desc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP; // NOTE: needed to not crash
-                        desc.MipLODBias = 0.0f;
-                        if (object.albedo.sampler_filter == SamplerFilter::Anisotropic)
-                        {
-                            desc.MaxAnisotropy = object.albedo.sampler_anisotropy;
-                        }
-                        //desc.ComparisonFunc = ;
-                        if (object.albedo.sampler_address_mode_u == SamplerAddressMode::Border || object.albedo.sampler_address_mode_v == SamplerAddressMode::Border)
-                        {
-                            desc.BorderColor[0] = object.albedo.sampler_border_color.x;
-                            desc.BorderColor[1] = object.albedo.sampler_border_color.y;
-                            desc.BorderColor[2] = object.albedo.sampler_border_color.z;
-                            desc.BorderColor[3] = 1.0f;
-                        }
-                        desc.MinLOD = 0.0f;
-                        desc.MaxLOD = D3D11_FLOAT32_MAX;
-
-                        sss[0] = m_samplers.Get(desc);
+                        sss[0] = m_samplers.Get(GetD3D11SamplerDescFromSampler(object.albedo.sampler));
                     }
 
                     // prepare shader resource views
