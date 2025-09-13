@@ -2,6 +2,7 @@
 
 #include <qk/r3d/Scene.h>
 
+#include <filesystem>
 #include <memory>
 
 namespace qk::r3d
@@ -15,6 +16,8 @@ namespace qk::r3d
         Renderer(Renderer&&) noexcept = delete;
         Renderer& operator=(const Renderer&) = delete;
         Renderer& operator=(Renderer&&) noexcept = delete;
+    public:
+        TextureID LoadTexture(const std::filesystem::path& path, bool linear);
     public:
         void Render(int w, int h, void* rtv, const Scene& scene);
     private:

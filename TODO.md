@@ -3,3 +3,4 @@
 []: build fullscreen quad mesh and use it for WBOIT composite pass
 []: implement table data structure for textures and meshes, instead of using raw std::vectors
 []: log the amount of samplers stored into the samplers cache
+[]: Add the possibility of selecting which texture to use for the albedo of objects from the editor

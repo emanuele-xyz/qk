@@ -2229,6 +2229,8 @@ namespace qk::r3d
         RendererImpl& operator=(const RendererImpl&) = delete;
         RendererImpl& operator=(RendererImpl&&) noexcept = delete;
     public:
+        TextureID LoadTexture(const std::filesystem::path& path, bool linear);
+    public:
         void Render(int w, int h, ID3D11RenderTargetView* rtv, const Scene& scene);
     private:
         ID3D11Device* m_dev;
@@ -2303,6 +2305,12 @@ namespace qk::r3d
             }
         }
     }
+    TextureID RendererImpl::LoadTexture(const std::filesystem::path& path, bool linear)
+    {
+        std::size_t idx{ m_textures.size() };
+        m_textures.emplace_back(Texture{ m_dev, linear, path });
+        return TextureID{ idx };
+    }
     void RendererImpl::Render(int w, int h, ID3D11RenderTargetView* rtv, const Scene& scene)
     {
         // resize depth stencil buffer, if necessary
@@ -2326,6 +2334,10 @@ namespace qk::r3d
     Renderer::Renderer(void* d3d_dev, void* d3d_ctx)
         : m_impl{ std::make_shared<RendererImpl>(static_cast<ID3D11Device*>(d3d_dev), static_cast<ID3D11DeviceContext*>(d3d_ctx)) }
     {
+    }
+    TextureID Renderer::LoadTexture(const std::filesystem::path& path, bool linear)
+    {
+        return std::static_pointer_cast<RendererImpl>(m_impl)->LoadTexture(path, linear);
     }
     void Renderer::Render(int w, int h, void* rtv, const Scene& scene)
     {

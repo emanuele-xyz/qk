@@ -11,7 +11,7 @@ namespace qk
     class Editor
     {
     public:
-        Editor(const Keyboard& keyboard, const Mouse& mouse);
+        Editor(r3d::Renderer& renderer, const Keyboard& keyboard, const Mouse& mouse);
         ~Editor() = default;
         Editor(const Editor&) = delete;
         Editor(Editor&&) noexcept = delete;
@@ -23,6 +23,7 @@ namespace qk
         void Update(float dt);
         void Render();
     private:
+        r3d::Renderer& m_renderer;
         const Keyboard& m_keyboard;
         const Mouse& m_mouse;
         Camera m_camera;

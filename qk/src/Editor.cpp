@@ -93,14 +93,18 @@ namespace qk
         return static_cast<r3d::SamplerAddressMode>(static_cast<int>(sampler_mode) + 1);
     }
 
-    Editor::Editor(const Keyboard& keyboard, const Mouse& mouse)
-        : m_keyboard{ keyboard }
+    Editor::Editor(r3d::Renderer& renderer, const Keyboard& keyboard, const Mouse& mouse)
+        : m_renderer{ renderer }
+        , m_keyboard{ keyboard }
         , m_mouse{ mouse }
         , m_camera{}
         , m_scene{}
     {
         // TODO: to be removed
         {
+            // load lenna.png texture from disk
+            r3d::TextureID lenna{ renderer.LoadTexture("data_raw/lenna.png", false) };
+
             // lights
             {
                 r3d::Light light{};
@@ -158,7 +162,7 @@ namespace qk
                 object.mesh_id = r3d::CUBE;
                 object.albedo.mix = 0.75f;
                 object.albedo.color = Vector3{ 0.0f, 0.0f, 1.0f };
-                object.albedo.id = r3d::ALBEDO_CHECKER;
+                object.albedo.id = lenna;
                 m_scene.objects.emplace_back(object);
 
                 object = r3d::Object{};

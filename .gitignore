@@ -376,3 +376,6 @@ qk/include/qk/hlsl
 
 # vcpkg
 .vcpkg_install
+
+# current workin directory
+cwd

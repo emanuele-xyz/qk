@@ -91,7 +91,7 @@ namespace qk
         r3d::Renderer renderer{ d3d_dev.Get(), d3d_ctx.Get() };
         Keyboard keyboard{};
         Mouse mouse{};
-        Editor editor{ keyboard, mouse };
+        Editor editor{ renderer, keyboard, mouse };
         Stopwatch frame_stopwatch{};
 
         while (app_context.is_running)
