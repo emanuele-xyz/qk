@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "qk", "qk\qk.vcxproj", "{7D4
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "qk_mesh", "qk_mesh\qk_mesh.vcxproj", "{480223F6-D738-4E57-B289-C7B5E90328AB}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "qk_import", "qk_import\qk_import.vcxproj", "{92F3E723-72F9-430C-86F0-281D5BF9A5A2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,10 @@ Global
 		{480223F6-D738-4E57-B289-C7B5E90328AB}.Debug|x64.Build.0 = Debug|x64
 		{480223F6-D738-4E57-B289-C7B5E90328AB}.Release|x64.ActiveCfg = Release|x64
 		{480223F6-D738-4E57-B289-C7B5E90328AB}.Release|x64.Build.0 = Release|x64
+		{92F3E723-72F9-430C-86F0-281D5BF9A5A2}.Debug|x64.ActiveCfg = Debug|x64
+		{92F3E723-72F9-430C-86F0-281D5BF9A5A2}.Debug|x64.Build.0 = Debug|x64
+		{92F3E723-72F9-430C-86F0-281D5BF9A5A2}.Release|x64.ActiveCfg = Release|x64
+		{92F3E723-72F9-430C-86F0-281D5BF9A5A2}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

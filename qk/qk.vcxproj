@@ -56,10 +56,10 @@
     <VcpkgEnableManifest>true</VcpkgEnableManifest>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <VcpkgInstalledDir>$(SolutionDir)\.vcpkg_install</VcpkgInstalledDir>
+    <VcpkgInstalledDir>$(SolutionDir)\$(ProjectName)\.vcpkg_install</VcpkgInstalledDir>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <VcpkgInstalledDir>$(SolutionDir)\.vcpkg_install</VcpkgInstalledDir>
+    <VcpkgInstalledDir>$(SolutionDir)\$(ProjectName)\.vcpkg_install</VcpkgInstalledDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
