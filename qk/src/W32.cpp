@@ -1,6 +1,12 @@
 #include <qk/PCH.h>
 #include <qk/W32.h>
 
+#include <io.h>
+#include <fcntl.h>
+#include <tlhelp32.h>
+
+#include <scope_guard.hpp>
+
 namespace qk::w32
 {
     WindowClass::WindowClass(const char* name, WNDPROC window_proc)
@@ -67,5 +73,48 @@ namespace qk::w32
             TranslateMessage(&msg);
             DispatchMessageA(&msg);
         }
+    }
+
+    DWORD GetParentProcessId(DWORD pid)
+    {
+        HANDLE snapshot{ CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) };
+        qk_Check(snapshot != INVALID_HANDLE_VALUE);
+        auto close_snapshot_handle_on_oos{ sg::make_scope_guard([=]() { CloseHandle(snapshot); }) };
+
+        PROCESSENTRY32 process_entry{};
+        process_entry.dwSize = sizeof(PROCESSENTRY32);
+        qk_Check(Process32First(snapshot, &process_entry));
+
+        DWORD pid_parent{};
+        do
+        {
+            if (process_entry.th32ProcessID == pid)
+            {
+                pid_parent = process_entry.th32ParentProcessID;
+            }
+        } while (Process32Next(snapshot, &process_entry) && !pid_parent);
+
+        return pid_parent;
+    }
+    std::string GetProcessName(DWORD pid)
+    {
+        HANDLE snapshot{ CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) };
+        qk_Check(snapshot != INVALID_HANDLE_VALUE);
+        auto close_snapshot_handle_on_oos{ sg::make_scope_guard([=]() { CloseHandle(snapshot); }) };
+
+        PROCESSENTRY32 process_entry{};
+        process_entry.dwSize = sizeof(PROCESSENTRY32);
+        qk_Check(Process32First(snapshot, &process_entry));
+
+        std::string name{};
+        do
+        {
+            if (process_entry.th32ProcessID == pid)
+            {
+                name = std::string{ process_entry.szExeFile };
+            }
+        } while (Process32Next(snapshot, &process_entry) && name.empty());
+
+        return name;
     }
 }

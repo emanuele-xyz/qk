@@ -155,8 +155,7 @@ namespace qk
     }
 }
 
-// TODO: https://devblogs.microsoft.com/oldnewthing/20160125-00/?p=92922
-int main()
+int APIENTRY WinMain(HINSTANCE /*hinst*/, HINSTANCE /*hinstprev*/, PSTR /*cmdline*/, int /*cmdshow*/)
 {
     try
     {
@@ -164,7 +163,7 @@ int main()
     }
     catch (const qk::Crash& e)
     {
-        std::cerr << e.what() << "\n";
+        MessageBoxA(NULL, e.what(), "Crash!", MB_OK | MB_ICONERROR);
     }
 
     return 0;

@@ -2102,6 +2102,7 @@ namespace qk::r3d
                 // if either the object is fully opauqe or fully transparent, skip it
                 if (object.opacity == 1.0f || object.opacity == 0.0f)
                 {
+                    // TODO: use logger
                     std::cout << "[WARNING]: rendering a fully " << ((object.opacity == 1.0f) ? "opaque" : "transparent") << " object\n";
                     continue;
                 }

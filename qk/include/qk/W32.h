@@ -46,4 +46,7 @@ namespace qk::w32
     };
 
     void PumpMessages();
+
+    DWORD GetParentProcessId(DWORD pid);
+    std::string GetProcessName(DWORD pid);
 }
