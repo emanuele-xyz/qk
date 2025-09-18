@@ -17,7 +17,7 @@ namespace qk::r3d
         Renderer& operator=(const Renderer&) = delete;
         Renderer& operator=(Renderer&&) noexcept = delete;
     public:
-        TextureID LoadTexture(const std::filesystem::path& path, bool linear);
+        TextureID LoadTexture(const std::filesystem::path& path);
     public:
         void Render(int w, int h, void* rtv, const Scene& scene);
     private:

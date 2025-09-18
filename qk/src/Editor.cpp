@@ -103,7 +103,7 @@ namespace qk
         // TODO: to be removed
         {
             // load lenna.png texture from disk
-            r3d::TextureID lenna{ renderer.LoadTexture("data_raw/lenna.png", false) };
+            r3d::TextureID lenna{ renderer.LoadTexture("data_baked/lenna.dds") };
 
             // lights
             {
