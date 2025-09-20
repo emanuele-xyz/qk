@@ -167,10 +167,10 @@ Punctual lights:
 
 ### Cube Maps
 
-- A cube map is made up of siz textures, one for each side of a cube.
+- A cube map is made up of six textures, one for each side of a cube.
 - A cube map is sampled using a 3d direction vector.
 - We shoot a ray from the center of the cube along the passed direction and we find the intersection point.
-- THe result of sampling is the color at the found intersection point.
+- The result of sampling is the color at the found intersection point.
 - Most commonly used for environment mapping.
 
 ### Texture Representation
@@ -213,3 +213,39 @@ Punctual lights:
 - We can also use a texture to change the shading equation we are evaluating for a surface point.
 - Textures having linear inputs (color) to the final pixel color can be filtered normally.
 - Textures having non-linear inputs (roughness, bump) to the final pixel color require care.
+
+## Alpha Mapping
+
+- We can use alpha blending/testing to implement many effects.
+- Some notable effects are foliage, explosions and distant objects.
+- Another notable texture effect is decaling.
+- This consists into placing a texture onto an object.
+- Using textures with alpha, texels with alpha equal to 0 have no effect.
+- Typically,a clamp corresponder function is used with a transparent border to apply a single copy of the decal to the surface.
+- Another application of alpha is making cutouts.
+- We can use a texture for a brush and render it mapped to a textured quad. In this way we have a bush in our scene.
+- We render an object with a complex silouette just using a quad.
+- If the viewer moves, the bush rendered in this way may appear flat.
+- To fix this issue, we may place another bush quad, perpendicular to the first.
+- This is what is called a cross tree.
+- Another solution to fix the quad bush issue is to use billboarding.
+- Combining alpha maps and texture animation can be used for effects such as: flickering torches, plant growth, explosions and atmospheric effects.
+- We can use alpha blending to render objects with an alpha map.
+- This requires rendering the transparent objects after the opaque ones, from back to front. (NOTE: can we use an OIT technique?)
+- If we don't want to use alpha bledning, because we don't want to do the sorting, we can use alpha testing.
+- Alpha testing consists in discarding fragments with alpha values below a given threshold in the pixel shader.
+- `if (texture.alpha < alpha_threshold) discard`.
+- For cutouts, we set the threshold to a value higher than 0, usually 0.5, and don't perform alpha blending at all for those fragments with alpha different from 1 and higher than the threshold.
+- Doing so avoids out of order artifacts, but the quality of the rendering is low.
+- Another solution is to perform two passes: one for solid cutouts, written to the z buffer, and one for semitransparent samples. (NOTE: how?)
+- Problems arise when alpha maps are minified/magnified.
+- For example, when mip maps are generated, alpha values are averaged, yielding undesired results.
+- This problem can be fixed by using another way to mix alphas when computing the mip chain for alpha maps.
+- Another way to fix this is to scale the alphas read from the alpha map accordingly.
+- Another way is to alpha test the texel's alpha against a random alpha value. This is a form of stochastic transparency.
+- In practice, the random function is replaced with a hash function to avoid temporal and spatial noise.
+- Alpha testing produces ripple artifacts under magnification.
+- This can be fixed by representing the alpha map as an SDF.
+- When computing mip chains for RGBA textures using the standard way yields values with premultiplied alphas.
+- If you treat that as an unmultiplied RGBA color, then you get artifacts on the fringe between opaque and transparent texels.
+- The best strategy is to alpha premultiply before generating the mipmaps.
