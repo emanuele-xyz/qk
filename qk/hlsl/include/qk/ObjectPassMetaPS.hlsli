@@ -64,6 +64,8 @@ struct PSOutput
 
 PSOutput main(VSOutput input)
 {
+    // TODO: if the object's opacity is 0, 
+    
     float3 albedo = float3(0, 0, 0);
     {
         float3 albedo_color = cb_object.albedo_color;
