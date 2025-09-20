@@ -199,7 +199,6 @@ Punctual lights:
 
 - Procedural textures make good volume textures.
 - Noise is an essential component of procedural texturing.
-- Combining multiple octaves of noise makes a
 
 ## Texture Animation
 
