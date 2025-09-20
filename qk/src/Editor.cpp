@@ -361,5 +361,7 @@ namespace qk
             ImGui::DragFloat("Far Plane", &m_scene.camera.far_plane, 0.1f);
         }
         ImGui::End();
+
+        // TODO: sanitize scene data
     }
 }
