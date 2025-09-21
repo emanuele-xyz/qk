@@ -64,7 +64,11 @@ struct PSOutput
 
 PSOutput main(VSOutput input)
 {
-    // TODO: if the object's opacity is 0, 
+    // TODO: if the object's opacity is 0, discard the fragment
+    {
+        //float alpha = albedo_texture.Sample(albedo_sampler, input.uv).w;
+        //if (alpha < 0.1) discard;
+    }
     
     float3 albedo = float3(0, 0, 0);
     {

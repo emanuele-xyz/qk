@@ -94,6 +94,15 @@ namespace qk::r3d
         Vector3 color{ 1.0f, 1.0f, 1.0f };
         TextureID id{ ALBEDO_BLACK }; // TODO: rename to texture
         Sampler sampler{};
+        float alpha_test{ 1.0f }; // all fragments with alpha < alpha_test are discarded
+    };
+
+    struct Opacity
+    {
+        float opacity{ 1.0f }; // 0 for fully transparent, 1 for fully opaque
+        TextureID id{ TEXTURE_ID_INVALID }; // TODO: rename to alpha map
+        Sampler sampler{};
+        float alpha_test{ 1.0f }; // all fragments with alpha >= alpha_test are discarded
     };
 
     struct Object
@@ -104,7 +113,7 @@ namespace qk::r3d
         Vector3 scaling{ 1.0f, 1.0f, 1.0f };
         MeshID mesh_id{ CUBE };
         Albedo albedo{};
-        float opacity{ 1.0f }; // 0 for fully transparent, 1 for fully opaque
+        Opacity opacity{};
     };
 
     struct Scene

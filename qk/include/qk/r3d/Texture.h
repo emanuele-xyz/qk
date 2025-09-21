@@ -17,8 +17,9 @@ namespace qk::r3d
         std::size_t m_id;
     };
 
-    constexpr TextureID ALBEDO_BLACK{ 0 };
-    constexpr TextureID ALBEDO_WHITE{ 1 };
-    constexpr TextureID ALBEDO_PINK{ 2 };
-    constexpr TextureID ALBEDO_CHECKER{ 3 };
+    constexpr TextureID TEXTURE_ID_INVALID{ 0 };
+    constexpr TextureID ALBEDO_BLACK{ 1 };
+    constexpr TextureID ALBEDO_WHITE{ 2 };
+    constexpr TextureID ALBEDO_PINK{ 3 };
+    constexpr TextureID ALBEDO_CHECKER{ 4 };
 }

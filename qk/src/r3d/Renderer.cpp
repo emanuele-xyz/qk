@@ -1170,6 +1170,7 @@ namespace qk::r3d
     private:
         constexpr static int ALBEDO_DIM{ 64 };
     public:
+        Texture();
         Texture(ID3D11Device* dev, bool linear, int w, int h, int channels, const void* data);
         Texture(ID3D11Device* dev, std::filesystem::path path);
         ~Texture() = default;
@@ -1302,6 +1303,11 @@ namespace qk::r3d
         }
 
         return Texture{ dev, false, DIM, DIM, CHANNELS, pixels.get() };
+    }
+    Texture::Texture()
+        : m_texture{}
+        , m_srv{}
+    {
     }
     Texture::Texture(ID3D11Device* dev, bool linear, int w, int h, int channels, const void* data)
         : m_texture{}
@@ -1715,7 +1721,7 @@ namespace qk::r3d
             for (const Object& object : scene.objects)
             {
                 // if the object is not fully opauqe, skip it
-                if (object.opacity != 1.0f)
+                if (object.opacity.opacity != 1.0f)
                 {
                     continue;
                 }
@@ -1747,7 +1753,7 @@ namespace qk::r3d
                     constants->normal = normal;
                     constants->albedo_color = GammaCorrectToLinear(object.albedo.color);
                     constants->albedo_mix = object.albedo.mix;
-                    constants->opacity = object.opacity;
+                    constants->opacity = object.opacity.opacity;
                 }
 
                 // set mesh related pipeline state and submit draw call
@@ -2058,7 +2064,7 @@ namespace qk::r3d
             // fetch all objects that are neither fully opaque nor fully transparent
             for (const Object& obj : scene.objects)
             {
-                if (0.0f < obj.opacity && obj.opacity < 1.0f)
+                if (0.0f < obj.opacity.opacity && obj.opacity.opacity < 1.0f)
                 {
                     m_transparent_objects.emplace_back(obj);
                 }
@@ -2086,10 +2092,10 @@ namespace qk::r3d
             for (const Object& object : m_transparent_objects)
             {
                 // if either the object is fully opauqe or fully transparent, skip it
-                if (object.opacity == 1.0f || object.opacity == 0.0f)
+                if (object.opacity.opacity == 1.0f || object.opacity.opacity == 0.0f)
                 {
                     // TODO: use logger
-                    std::cout << "[WARNING]: rendering a fully " << ((object.opacity == 1.0f) ? "opaque" : "transparent") << " object\n";
+                    std::cout << "[WARNING]: rendering a fully " << ((object.opacity.opacity == 1.0f) ? "opaque" : "transparent") << " object\n";
                     continue;
                 }
 
@@ -2120,7 +2126,7 @@ namespace qk::r3d
                     constants->normal = normal;
                     constants->albedo_color = GammaCorrectToLinear(object.albedo.color);
                     constants->albedo_mix = object.albedo.mix;
-                    constants->opacity = object.opacity;
+                    constants->opacity = object.opacity.opacity;
                 }
 
                 // set mesh related pipeline state and submit draw call
@@ -2270,6 +2276,11 @@ namespace qk::r3d
         // upload ddefault textures
         // TODO: make it less boilerplaty
         {
+            {
+                size_t idx{ m_textures.size() };
+                m_textures.emplace_back(Texture{});
+                qk_Check(TextureID{ idx } == TEXTURE_ID_INVALID); // check that the texture index matches its predefined id
+            }
             {
                 size_t idx{ m_textures.size() };
                 m_textures.emplace_back(Texture::AlbedoBlack(m_dev));

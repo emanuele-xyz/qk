@@ -104,6 +104,7 @@ namespace qk
         {
             // load lenna.png texture from disk
             r3d::TextureID lenna{ renderer.LoadTexture("data_baked/lenna.dds") };
+            r3d::TextureID grass{ renderer.LoadTexture("data_baked/grass.dds") };
 
             // lights
             {
@@ -114,7 +115,7 @@ namespace qk
                     light = {};
                     light.type = r3d::LightType::Directional;
                     light.color = Vector3{ 0.5f, 0.5f, 0.5f };
-                    light.direction = Vector3{ 0.0f, -1.0f, 0.0f };
+                    light.direction = Vector3{ -1.0f, -1.0f, -1.0f };
                     m_scene.lights.emplace_back(light);
                 }
                 // point lights
@@ -165,6 +166,14 @@ namespace qk
                 object.albedo.id = lenna;
                 m_scene.objects.emplace_back(object);
 
+                object = r3d::Object{};
+                object.shading_mode = r3d::ShadingMode::Shaded;
+                object.position = Vector3{ 0.0f, 2.0f, 0.0f };
+                object.mesh_id = r3d::QUAD;
+                object.albedo.mix = 1.0f;
+                object.albedo.id = grass;
+                m_scene.objects.emplace_back(object);
+                
                 object = r3d::Object{};
                 object.shading_mode = r3d::ShadingMode::Shaded;
                 object.position = Vector3{ -2.0f, 2.0f, 0.0f };
@@ -336,13 +345,22 @@ namespace qk
                                 ImGuiEx::DragFloat3("Scaling", object.scaling, 0.1f);
                                 ImGui::Text("Mesh ID: %d", object.mesh_id);
                                 ImGui::DragFloat("Albedo Mix", &object.albedo.mix, 0.001f, 0.0f, 1.0f);
-                                ImGuiEx::ColorEdit3("Albedo Color", object.albedo.color);
-                                ImGui::Text("Albedo ID: %d", object.albedo.id); // TODO: use combo for mesh
-                                ImGuiEx::Combo("Albedo Sampler Filter", GetSamplerFilterStr, GetNextSamplerFilter, object.albedo.sampler.filter, r3d::SamplerFilter::Count);
-                                ImGuiEx::Combo("Albedo Sampler Address Mode U: %s", GetSamplerAddressModeStr, GetNextSamplerAddressMode, object.albedo.sampler.address_mode_u, r3d::SamplerAddressMode::Count);
-                                ImGuiEx::Combo("Albedo Sampler Address Mode V: %s", GetSamplerAddressModeStr, GetNextSamplerAddressMode, object.albedo.sampler.address_mode_v, r3d::SamplerAddressMode::Count);
-                                ImGui::DragInt("Albedo Sampler Anisotropy", &object.albedo.sampler.anisotropy, 1.0f, 1, 16); // TODO: hardcoded min max anisotropy
-                                ImGui::DragFloat("Opacity", &object.opacity, 0.01f, 0.0f, 1.0f);
+                                ImGui::SeparatorText("Albedo");
+                                ImGuiEx::ColorEdit3("Color", object.albedo.color);
+                                ImGui::Text("ID: %d", object.albedo.id); // TODO: use combo
+                                ImGuiEx::Combo("Filter", GetSamplerFilterStr, GetNextSamplerFilter, object.albedo.sampler.filter, r3d::SamplerFilter::Count);
+                                ImGuiEx::Combo("Address Mode U: %s", GetSamplerAddressModeStr, GetNextSamplerAddressMode, object.albedo.sampler.address_mode_u, r3d::SamplerAddressMode::Count);
+                                ImGuiEx::Combo("Address Mode V: %s", GetSamplerAddressModeStr, GetNextSamplerAddressMode, object.albedo.sampler.address_mode_v, r3d::SamplerAddressMode::Count);
+                                ImGui::DragInt("Anisotropy", &object.albedo.sampler.anisotropy, 1.0f, 1, 16); // TODO: hardcoded min max anisotropy
+                                ImGui::DragFloat("Alpha Test", &object.albedo.alpha_test, 0.01f, 0.0f, 1.0f); // TODO: hardcoded min max
+                                ImGui::SeparatorText("Opacity");
+                                ImGui::DragFloat("Opacity", &object.opacity.opacity, 0.01f, 0.0f, 1.0f); // TODO: hardcoded min max
+                                ImGui::Text("ID: %d", object.opacity.id); // TODO: use combo
+                                ImGuiEx::Combo("Filter", GetSamplerFilterStr, GetNextSamplerFilter, object.opacity.sampler.filter, r3d::SamplerFilter::Count);
+                                ImGuiEx::Combo("Address Mode U: %s", GetSamplerAddressModeStr, GetNextSamplerAddressMode, object.opacity.sampler.address_mode_u, r3d::SamplerAddressMode::Count);
+                                ImGuiEx::Combo("Address Mode V: %s", GetSamplerAddressModeStr, GetNextSamplerAddressMode, object.opacity.sampler.address_mode_v, r3d::SamplerAddressMode::Count);
+                                ImGui::DragInt("Anisotropy", &object.opacity.sampler.anisotropy, 1.0f, 1, 16); // TODO: hardcoded min max anisotropy
+                                ImGui::DragFloat("Alpha Test", &object.opacity.alpha_test, 0.01f, 0.0f, 1.0f); // TODO: hardcoded min max
                             }
                         }
                         ImGui::PopID();
