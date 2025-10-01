@@ -1754,6 +1754,8 @@ namespace qk::r3d
                     constants->albedo_color = GammaCorrectToLinear(object.albedo.color);
                     constants->albedo_mix = object.albedo.mix;
                     constants->opacity = object.opacity.opacity;
+                    constants->alpha_test = object.albedo.alpha_test;
+                    constants->alpha_test_value = object.albedo.alpha_test_value;
                 }
 
                 // set mesh related pipeline state and submit draw call
@@ -2127,6 +2129,7 @@ namespace qk::r3d
                     constants->albedo_color = GammaCorrectToLinear(object.albedo.color);
                     constants->albedo_mix = object.albedo.mix;
                     constants->opacity = object.opacity.opacity;
+                    constants->alpha_test = object.opacity.alpha_test;
                 }
 
                 // set mesh related pipeline state and submit draw call

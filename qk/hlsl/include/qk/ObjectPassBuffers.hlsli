@@ -22,8 +22,9 @@ struct ObjectPassObjectConstants
     float3 albedo_color;
     float albedo_mix;
     float opacity;
+    float alpha_test_value;
+    int alpha_test;
     int shading_mode;
-    float _pad0[2];
 };
 
 struct ObjectPassLight
